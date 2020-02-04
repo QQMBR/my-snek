@@ -2,15 +2,16 @@ package com.example.mysnek
 
 import android.util.Log
 import io.reactivex.Observable
+import io.reactivex.functions.BiFunction
 import java.util.concurrent.TimeUnit
 
 class GameModel {
 
     //stream of the snake's movement
-    private var movement : Observable<Direction> = Observable.empty()
+    private var movement: Observable<Direction> = Observable.empty()
 
     //stream of the snake's head's position
-    lateinit var snake : Observable<Coords>
+    lateinit var snake: Observable<ArrayList<Coords>>
 
     //TODO do this in constructor
     //pass an observable stream of input directions and initialize streams
@@ -22,21 +23,37 @@ class GameModel {
             }
             .switchMap { dir ->
                 Observable
-                    .interval(0, 1000, TimeUnit.MILLISECONDS)
+                    .interval(0, 600, TimeUnit.MILLISECONDS)
                     .map { dir }
             }
 
         snake = movement
-            .scan(Pair(0, 0)) { (x, y), dir ->
-                //add the vectorized direction to the current coordinates
-                //by destructuring the pair in a lambda
-                { (dx, dy): Coords ->
-                    Pair(x + dx, y + dy)
-                }(dir.vectorize())
-            }
+            .scan(ArrayList((0..7).map { Pair(0, it) }), moveSnake)
             .doOnNext { p -> Log.d(TAG, "New value in snake $p") }
 
         return movement
+    }
+
+    //move the tile by destructuring the coordinates of the tile
+    //and the vectorized direction and adding the components
+    //of the vector to the coordinates
+    private val moveHead = { (x, y): Coords, dir: Direction ->
+        { (dx, dy): Coords ->
+            Pair(x + dx, y + dy)
+        }(dir.vectorize())
+    }
+
+    private val moveSnake: BiFunction<ArrayList<Coords>, Direction, ArrayList<Coords>> = BiFunction { body, direction ->
+        body.apply {
+            //remove the last element of the body
+            removeAt(lastIndex)
+
+            //add a new head, which is the old head "translated by the direction"
+            add(
+                0,
+                moveHead(body.first(), direction)
+            )
+        }
     }
 
     //simple enum for all the directions the snake can move in

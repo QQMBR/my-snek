@@ -25,7 +25,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         //observe changes in the live data and send them for rendering the SurfaceView
-        viewModel.liveGameData.observe(this, Observer(gameSurfaceView::renderTileAt))
+        viewModel.liveGameData.observe(this, Observer(gameSurfaceView::renderTiles))
     }
 
     companion object {

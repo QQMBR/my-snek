@@ -11,6 +11,8 @@ class GameRenderer : GLSurfaceView.Renderer {
     //a square tile that can be drawn
     private lateinit var square: Tile
 
+    private val tiles: ArrayList<Tile> = arrayListOf()
+
     //necessary matrices used in the OpenGL pipeline
     private val mVPMatrix = FloatArray(16)
     private val projectionMatrix = FloatArray(16)
@@ -27,6 +29,32 @@ class GameRenderer : GLSurfaceView.Renderer {
         }
     }
 
+    //copy a list of coordinates over into the x and y
+    //coordinates of all tiles in the list
+    //TODO add efficiency improvement for when only the first and last tiles have been moved
+    fun renderTiles(coords: ArrayList<Coords>) {
+        coords.forEachIndexed { index, (x, y) ->
+            //as long as there are still tiles to update, only the coordinates of the
+            //tiles need to be changed and no new ones have to be created or deleted
+            if (tiles.size < index) {
+                tiles[index].x = x
+                tiles[index].y = y
+            }
+            //if there aren't as many tiles as coordinates, create new tiles for
+            //these coordinates
+            else {
+                tiles.add(Tile(x, y))
+            }
+        }
+
+        //if were less coordinates then tiles, remove tiles from
+        //the start of the list until there aren't any extra
+        //TODO check whether to remove from start or end
+        while (coords.size < tiles.size) {
+            tiles.removeAt(0)
+        }
+    }
+
     override fun onDrawFrame(p0: GL10?) {
 
         //set the camera position
@@ -35,7 +63,8 @@ class GameRenderer : GLSurfaceView.Renderer {
 
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 
-        square.draw(mVPMatrix)
+        //draw all of the tiles from the list
+        tiles.forEach { t -> t.draw(mVPMatrix) }
     }
 
     override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {

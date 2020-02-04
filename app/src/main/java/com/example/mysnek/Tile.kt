@@ -6,7 +6,7 @@ import android.util.Log
 class Tile(var x: Int, var y: Int): Square() {
 
     //TODO expose grid dimensions
-    private val scalelessOffset = GameGrid(4, 4)
+    private val scalelessOffset = GameGrid(8, 8)
 
     //change the coordinates of the box based on a direction
     //UNUSED - see GameSurfaceView
