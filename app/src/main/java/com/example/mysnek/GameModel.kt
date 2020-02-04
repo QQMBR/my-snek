@@ -10,7 +10,7 @@ class GameModel {
     private var movement : Observable<Direction> = Observable.empty()
 
     //stream of the snake's head's position
-    lateinit var snake : Observable<Pair<Int, Int>>
+    lateinit var snake : Observable<Coords>
 
     //TODO do this in constructor
     //pass an observable stream of input directions and initialize streams
@@ -30,7 +30,7 @@ class GameModel {
             .scan(Pair(0, 0)) { (x, y), dir ->
                 //add the vectorized direction to the current coordinates
                 //by destructuring the pair in a lambda
-                { (dx, dy): Pair<Int, Int> ->
+                { (dx, dy): Coords ->
                     Pair(x + dx, y + dy)
                 }(dir.vectorize())
             }

@@ -21,7 +21,7 @@ class GameSurfaceView(context: Context): GLSurfaceView(context) {
 
     //render the tile at the given coordinates
     //TODO specify which tile
-    fun renderTileAt(p: Pair<Int, Int>) = queueEvent {renderer.renderTileAt(p)}
+    fun renderTileAt(p: Coords) = queueEvent {renderer.renderTileAt(p)}
 
     //a gesture detector that can also be used to create a new Observable
     //listens only to fling events and calls onNext each time a fling is registered

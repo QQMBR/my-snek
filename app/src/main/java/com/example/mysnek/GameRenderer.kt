@@ -20,7 +20,7 @@ class GameRenderer : GLSurfaceView.Renderer {
     fun moveBox(dir: GameModel.Direction) = if (::square.isInitialized) square.move(dir) else Unit
 
     //directly change the coordinates of the tile
-    fun renderTileAt(p: Pair<Int, Int>) {
+    fun renderTileAt(p: Coords) {
         if (::square.isInitialized) {
             square.x = p.first
             square.y = p.second

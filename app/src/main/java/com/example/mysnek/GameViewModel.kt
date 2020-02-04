@@ -17,7 +17,7 @@ class GameViewModel(obs: Observable<GameModel.Direction>) : ViewModel() {
     //create gameData from the game data Observable by turning it first into
     //a Flowable with a backpressure strategy
     val liveGameData by lazy {
-        LiveDataReactiveStreams.fromPublisher<Pair<Int, Int>>(
+        LiveDataReactiveStreams.fromPublisher<Coords>(
             model.run {
                 setInputStream(obs)
                 snake.toFlowable(BackpressureStrategy.LATEST)

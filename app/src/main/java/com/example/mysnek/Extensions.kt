@@ -18,3 +18,5 @@ fun GameModel.Direction.vectorize(): Pair<Int, Int>
         GameModel.Direction.DOWN  -> Pair( 0,  1)
         GameModel.Direction.RIGHT -> Pair( 1,  0)
     }
+
+typealias Coords = Pair<Int, Int>
