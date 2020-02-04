@@ -37,13 +37,15 @@ class GameModel {
     //move the tile by destructuring the coordinates of the tile
     //and the vectorized direction and adding the components
     //of the vector to the coordinates
-    private val moveHead = { (x, y): Coords, dir: Direction ->
+    private val moveHead
+            = { (x, y): Coords, dir: Direction ->
         { (dx, dy): Coords ->
             Pair(x + dx, y + dy)
-        }(dir.vectorize())
+        } (dir.vectorize())
     }
 
-    private val moveSnake: BiFunction<ArrayList<Coords>, Direction, ArrayList<Coords>> = BiFunction { body, direction ->
+    private val moveSnake: BiFunction<ArrayList<Coords>, Direction, ArrayList<Coords>>
+            = BiFunction { body, direction ->
         body.apply {
             //remove the last element of the body
             removeAt(lastIndex)

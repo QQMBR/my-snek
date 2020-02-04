@@ -32,26 +32,27 @@ class GameRenderer : GLSurfaceView.Renderer {
     //copy a list of coordinates over into the x and y
     //coordinates of all tiles in the list
     //TODO add efficiency improvement for when only the first and last tiles have been moved
+    //TODO handle case where there are more tiles than coordinates
     fun renderTiles(coords: ArrayList<Coords>) {
-        coords.forEachIndexed { index, (x, y) ->
-            //as long as there are still tiles to update, only the coordinates of the
-            //tiles need to be changed and no new ones have to be created or deleted
-            if (tiles.size < index) {
-                tiles[index].x = x
-                tiles[index].y = y
-            }
-            //if there aren't as many tiles as coordinates, create new tiles for
-            //these coordinates
-            else {
-                tiles.add(Tile(x, y))
-            }
-        }
 
-        //if were less coordinates then tiles, remove tiles from
-        //the start of the list until there aren't any extra
-        //TODO check whether to remove from start or end
-        while (coords.size < tiles.size) {
-            tiles.removeAt(0)
+        if (tiles.size <= coords.size) {
+
+            var index = 0
+
+            with(tiles.iterator()) {
+                forEach {
+                    it.x = coords[index].first
+                    it.y = coords[index].second
+
+                    index++
+                }
+            }
+
+            with(coords.takeLast(coords.size - tiles.size).iterator()) {
+                forEach { (x, y) ->
+                    tiles.add(Tile(x, y))
+                }
+            }
         }
     }
 
