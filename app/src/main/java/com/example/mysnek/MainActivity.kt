@@ -5,13 +5,9 @@ import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import io.reactivex.disposables.Disposable
 
 class MainActivity : AppCompatActivity() {
-
-    private lateinit var disposable: Disposable
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -21,14 +17,7 @@ class MainActivity : AppCompatActivity() {
         supportActionBar?.hide()
 
         //create a ViewModel using the stream of directions from the SurfaceView
-        val viewModel: GameViewModel by viewModels {
-            object : ViewModelProvider.Factory {
-                override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-                    return GameViewModel(gameSurfaceView.flingStream) as T
-                }
-            }
-        }
-
+        val viewModel: GameViewModel by viewModels()
         /*
         disposable = gameSurfaceView.flingStream.subscribeBy (
             onNext = {Log.d(TAG, "onNext")},
@@ -37,10 +26,8 @@ class MainActivity : AppCompatActivity() {
         )
         */
 
-        //gameSurfaceView.flingStream.connect()
-        //viewModel.setFlingStream(gameSurfaceView.flingStream)
-        //viewModel.reconnect()
-
+        //connect the ViewModel's subject to the input stream and signal
+        //that it may start emitting items
         gameSurfaceView.flingStream.subscribe(viewModel.events)
         gameSurfaceView.flingStream.connect()
 
@@ -60,11 +47,6 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent(this, StartActivity::class.java))
     }
 
-    override fun onDestroy() {
-        //disposable.dispose()
-
-        super.onDestroy()
-    }
     companion object {
         const val TAG = "MainActivity"
     }
