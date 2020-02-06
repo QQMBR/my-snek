@@ -3,10 +3,7 @@ package com.example.mysnek
 import android.opengl.Matrix
 import android.util.Log
 
-class Tile(var x: Int, var y: Int): Square() {
-
-    //TODO expose grid dimensions
-    private val scalelessOffset = GameGrid(8, 8)
+class Tile(private val scalelessOffset: GameGrid, var x: Int, var y: Int): Square() {
 
     //change the coordinates of the box based on a direction
     //UNUSED - see GameSurfaceView

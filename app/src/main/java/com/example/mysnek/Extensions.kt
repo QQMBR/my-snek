@@ -1,5 +1,7 @@
 package com.example.mysnek
 
+import io.reactivex.functions.Predicate
+
 //get the opposite direction
 fun GameModel.Direction.flip()
     = when (this) {
@@ -18,5 +20,11 @@ fun GameModel.Direction.vectorize(): Pair<Int, Int>
         GameModel.Direction.DOWN  -> Pair( 0,  1)
         GameModel.Direction.RIGHT -> Pair( 1,  0)
     }
+
+fun <T> Predicate<T>.not(): Predicate<T> {
+    return Predicate {
+        this.test(it).not()
+    }
+}
 
 typealias Coords = Pair<Int, Int>

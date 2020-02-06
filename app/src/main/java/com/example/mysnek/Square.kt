@@ -18,6 +18,7 @@ open class Square {
 
     private val drawOrder = shortArrayOf(0, 1, 2, 0, 2, 3)
 
+    //TODO abstract code a bit
     private val vertexBuffer = ByteBuffer.allocateDirect(coords.size * 4).run {
         order(ByteOrder.nativeOrder())
 
@@ -61,6 +62,7 @@ open class Square {
             GLES20.glAttachShader(it, fragmentShader)
 
             GLES20.glLinkProgram(it)
+            
         }
 
     }

@@ -2,12 +2,14 @@ package com.example.mysnek
 
 import android.content.Context
 import android.opengl.GLSurfaceView
+import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import androidx.core.view.GestureDetectorCompat
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import io.reactivex.ObservableOnSubscribe
+import io.reactivex.observables.ConnectableObservable
 import kotlin.math.absoluteValue
 
 class GameSurfaceView(context: Context): GLSurfaceView(context) {
@@ -17,10 +19,10 @@ class GameSurfaceView(context: Context): GLSurfaceView(context) {
 
     //use the renderer thread to set the new coordinates of the box based on a
     //direction; UNUSED: GameModel calculates the coordinates directly, see renderTileAt
-    fun moveBox(dir: GameModel.Direction) = queueEvent {renderer.moveBox(dir)}
+    //fun moveBox(dir: GameModel.Direction) = queueEvent {renderer.moveBox(dir)}
 
     //render the tile at the given coordinates
-    fun renderTileAt(p: Coords) = queueEvent {renderer.renderTileAt(p)}
+    //fun renderTileAt(p: Coords) = queueEvent {renderer.renderTileAt(p)}
 
     fun renderTiles(coords: ArrayList<Coords>) = queueEvent {renderer.renderTiles(coords)}
 
@@ -70,7 +72,7 @@ class GameSurfaceView(context: Context): GLSurfaceView(context) {
         }
     }
 
-    val flingStream: Observable<GameModel.Direction> = Observable.create(gestureDetector)
+    val flingStream: ConnectableObservable<GameModel.Direction> = Observable.create(gestureDetector).publish()
 
     private val detector = GestureDetectorCompat(context, gestureDetector)
 
@@ -83,6 +85,7 @@ class GameSurfaceView(context: Context): GLSurfaceView(context) {
 
     //use OpenGLES 2 and a GameRenderer as renderer
     init {
+        Log.d(TAG, "Setting up OpenGL SurfaceView")
         setEGLContextClientVersion(2)
 
         setRenderer(renderer)
