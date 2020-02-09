@@ -2,12 +2,13 @@ package com.example.mysnek
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 
 class MainActivity : AppCompatActivity() {
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -37,12 +38,20 @@ class MainActivity : AppCompatActivity() {
             when (it) {
                 is GameOver    -> gameOver()
                 is UpdateSnake -> gameSurfaceView.renderTiles(it.coords)
+                is UpdateAll   -> {
+                    gameSurfaceView.renderTiles(it.coords)
+                    gameSurfaceView.renderApple(it.newApple)
+                    Log.d(TAG, "New score = ${it.score}")
+                }
             }
         })
     }
 
     private fun gameOver() {
         //TODO properly handle game over
+        //destroy the ViewModel as it only handles a single game
+        viewModelStore.clear()
+
         //go back to the starting activity
         startActivity(Intent(this, StartActivity::class.java))
     }

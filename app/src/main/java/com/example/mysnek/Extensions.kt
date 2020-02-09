@@ -13,12 +13,12 @@ fun GameModel.Direction.flip()
 
 //turn the direction into a unit vector representing
 //the direction of the movement in screen coordinate space
-fun GameModel.Direction.vectorize(): Pair<Int, Int>
+fun GameModel.Direction.vectorize(): Coords
     = when (this) {
-        GameModel.Direction.UP    -> Pair( 0, -1)
-        GameModel.Direction.LEFT  -> Pair(-1,  0)
-        GameModel.Direction.DOWN  -> Pair( 0,  1)
-        GameModel.Direction.RIGHT -> Pair( 1,  0)
+        GameModel.Direction.UP    -> Coords( 0, -1)
+        GameModel.Direction.LEFT  -> Coords(-1,  0)
+        GameModel.Direction.DOWN  -> Coords( 0,  1)
+        GameModel.Direction.RIGHT -> Coords( 1,  0)
     }
 
 fun <T> Predicate<T>.not(): Predicate<T> {
@@ -27,4 +27,13 @@ fun <T> Predicate<T>.not(): Predicate<T> {
     }
 }
 
-typealias Coords = Pair<Int, Int>
+fun Int.colorToRGBAFloatArray(): FloatArray {
+    val maskToRange = { x: Int, n : Int -> ((this and x) shr n) / 255f }
+
+    return floatArrayOf(
+        maskToRange(0x00FF0000, 16), //R
+        maskToRange(0x0000FF00, 8), //G
+        maskToRange(0x000000FF, 0), //B
+        maskToRange(0xFF000000.toInt(), 24)  //A
+    )
+}

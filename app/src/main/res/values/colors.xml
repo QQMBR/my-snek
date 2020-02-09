@@ -3,4 +3,12 @@
     <color name="colorPrimary">#008577</color>
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D81B60</color>
+    <color name="colorBody1">#156d60</color>
+    <color name="colorHead1">#f32434</color>
+    <color name="colorApple1">#f6a51c</color>
+    <color name="colorBody">#26715e</color>
+    <color name="colorHead">#096747</color>
+    <color name="colorApple">#e13843</color>
+    <color name="colorBackground">#333333</color>
+    <color name="colorGridBackground">#262626</color>
 </resources>

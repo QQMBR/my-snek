@@ -8,20 +8,18 @@ import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
 
 class GameViewModel : ViewModel(),
-    Observer<ArrayList<Coords>> {
+    Observer<GameData> {
 
     //TODO make sure everything is properly disposed of
 
     val liveGameData = MutableLiveData<UIEvent>()
-    val events = PublishSubject.create<GameModel.Direction>()
 
-    //contains the game logic
-    private val model = GameModel()
+    val events = PublishSubject.create<GameModel.Direction>()
 
     init {
         //events stream contains the input information, apply the game
         //transformation to get the stream of the snake's body
-        model.apply(events).subscribe(this)
+        GameModel.apply(events).subscribe(this)
     }
 
     override fun onComplete() {
@@ -33,9 +31,12 @@ class GameViewModel : ViewModel(),
         Log.d(TAG, "Fam can't cop it no more")
     }
 
-    override fun onNext(coords: ArrayList<Coords>) {
+    override fun onNext(game: GameData) {
         Log.d(TAG, "Lezzgo da mandem")
-        liveGameData.postValue(UpdateSnake(coords))
+
+        //liveGameData.postValue(UpdateSnake(game.body))
+
+        liveGameData.postValue(UpdateAll(game.body, game.points, game.apple))
     }
 
     override fun onSubscribe(d: Disposable) {

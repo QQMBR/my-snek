@@ -5,17 +5,40 @@ import android.opengl.GLSurfaceView
 import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GestureDetectorCompat
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import io.reactivex.ObservableOnSubscribe
 import io.reactivex.observables.ConnectableObservable
+import java.util.*
 import kotlin.math.absoluteValue
 
 class GameSurfaceView(context: Context): GLSurfaceView(context) {
 
-    //renders a single tile on a grid with specifiable size
-    private val renderer = GameRenderer()
+    //renders tiles representing the snake and apple on a grid of specifiable size
+    //takes an enum map of color resources to color different parts of the game
+    private val renderer : GameRenderer
+
+    //use OpenGLES 2 and a GameRenderer as renderer
+    init {
+        Log.d(TAG, "Setting up OpenGL SurfaceView")
+        setEGLContextClientVersion(2)
+
+        renderer = {id: Int -> ResourcesCompat.getColor(resources, id, null)}.run {
+            GameRenderer(
+                EnumMap(mapOf(Pair(SnekColors.BACKGROUND,      this(R.color.colorBackground)),
+                    Pair(SnekColors.HEAD,            this(R.color.colorHead)),
+                    Pair(SnekColors.APPLE,           this(R.color.colorApple)),
+                    Pair(SnekColors.BODY,            this(R.color.colorBody)),
+                    Pair(SnekColors.GRID_BACKGROUND, this(R.color.colorGridBackground))
+                ))
+            )
+        }
+
+        setRenderer(renderer)
+        Log.d(TAG, "Set renderer")
+    }
 
     //use the renderer thread to set the new coordinates of the box based on a
     //direction; UNUSED: GameModel calculates the coordinates directly, see renderTileAt
@@ -24,7 +47,12 @@ class GameSurfaceView(context: Context): GLSurfaceView(context) {
     //render the tile at the given coordinates
     //fun renderTileAt(p: Coords) = queueEvent {renderer.renderTileAt(p)}
 
-    fun renderTiles(coords: ArrayList<Coords>) = queueEvent {renderer.renderTiles(coords)}
+    fun renderTiles(coords: ArrayList<Coords>) {
+        Log.d(TAG, "Calling queueEvent")
+        queueEvent { renderer.renderTilesSafe(coords) }
+    }
+
+    fun renderApple(coords: Coords) = queueEvent { renderer.renderAppleSafe(coords) }
 
     //a gesture detector that can also be used to create a new Observable
     //listens only to fling events and calls onNext each time a fling is registered
@@ -83,13 +111,6 @@ class GameSurfaceView(context: Context): GLSurfaceView(context) {
         return true
     }
 
-    //use OpenGLES 2 and a GameRenderer as renderer
-    init {
-        Log.d(TAG, "Setting up OpenGL SurfaceView")
-        setEGLContextClientVersion(2)
-
-        setRenderer(renderer)
-    }
 
     companion object {
         const val TAG = "GameSurfaceView"
