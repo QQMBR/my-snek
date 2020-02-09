@@ -8,11 +8,11 @@ import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
 
 class GameViewModel : ViewModel(),
-    Observer<GameData> {
+    Observer<SnekData> {
 
     //TODO make sure everything is properly disposed of
 
-    val liveGameData = MutableLiveData<UIEvent>()
+    val liveGameData = MutableLiveData<SnekEvent>()
 
     val events = PublishSubject.create<GameModel.Direction>()
 
@@ -24,19 +24,22 @@ class GameViewModel : ViewModel(),
 
     override fun onComplete() {
         Log.d(TAG, "Man's done up in this")
-        liveGameData.postValue(GameOver)
+        //liveGameData.postValue(Over(arrayListOf()))
     }
 
     override fun onError(e: Throwable) {
         Log.d(TAG, "Fam can't cop it no more")
     }
 
-    override fun onNext(game: GameData) {
-        Log.d(TAG, "Lezzgo da mandem")
+    override fun onNext(game: SnekData) {
+        //Log.d(TAG, "Lezzgo da mandem")
 
         //liveGameData.postValue(UpdateSnake(game.body))
-
-        liveGameData.postValue(UpdateAll(game.body, game.points, game.apple))
+        when (game) {
+            is Over -> liveGameData.postValue(GameOver2(game.body.size - SnekSettings.START_SIZE))
+            is Move -> liveGameData.postValue(UpdateBody(game.body))
+            is Apple -> liveGameData.postValue(UpdateApple(game.body, game.apple))
+        }
     }
 
     override fun onSubscribe(d: Disposable) {

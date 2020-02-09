@@ -2,7 +2,6 @@ package com.example.mysnek
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
@@ -34,6 +33,7 @@ class MainActivity : AppCompatActivity() {
 
         //observe changes in the live data and send them for rendering the SurfaceView
         //or handle the end of the game
+        /*
         viewModel.liveGameData.observe(this, Observer {
             when (it) {
                 is GameOver    -> gameOver()
@@ -45,15 +45,27 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+         */
+
+        viewModel.liveGameData.observe(this, Observer {
+            when (it) {
+                is GameOver2 -> gameOver(it.score)
+                is UpdateBody -> gameSurfaceView.renderTiles(it.coords)
+                is UpdateApple -> {
+                    gameSurfaceView.renderTiles(it.coords)
+                    gameSurfaceView.renderApple(it.newApple)
+                }
+            }
+        })
     }
 
-    private fun gameOver() {
+    private fun gameOver(score: Int) {
         //TODO properly handle game over
         //destroy the ViewModel as it only handles a single game
         viewModelStore.clear()
 
         //go back to the starting activity
-        startActivity(Intent(this, StartActivity::class.java))
+        startActivity(Intent(this, GameOverActivity::class.java).putExtra("score", score))
     }
 
     companion object {

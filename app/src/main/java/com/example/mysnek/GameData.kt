@@ -15,4 +15,13 @@ class ScoreUpdate(body: ArrayList<Coords>,
                   var apple: Coords,
                   val points: Int) : GameDataUpdates(body)
 
-data class SnekData(val body: ArrayList<Coords>)
+
+
+sealed class SnekData(val body: ArrayList<Coords>)
+sealed class Moveable(body: ArrayList<Coords>, val apple: Coords) : SnekData(body)
+
+class Apple(body: ArrayList<Coords>, apple: Coords) : Moveable(body, apple)
+class Move(body: ArrayList<Coords>, apple: Coords) : Moveable(body, apple)
+class Over(body: ArrayList<Coords>) : SnekData(body)
+object Finished : SnekData(arrayListOf())
+

@@ -8,7 +8,7 @@
         tools:context=".GameOverActivity">
 
     <TextView
-            android:id="@+id/pointsView"
+            android:id="@+id/scoreView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/point_scored"
@@ -31,5 +31,5 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/pointsView" />
+            app:layout_constraintTop_toBottomOf="@+id/scoreView" />
 </androidx.constraintlayout.widget.ConstraintLayout>
