@@ -11,27 +11,61 @@ import kotlin.random.Random
 
 object GameModel: ObservableTransformer<GameModel.Direction, SnekData> {
 
+    //TODO implement
+    private fun slownessFromLength(length: Int): Long = length.toLong()
+
+    private fun <T, R> biPair(): BiFunction<T, R, Pair<T, R>> = BiFunction {a, b -> Pair(a, b)}
+
     //take a stream of directions and transform it to a stream of the snake's body positions
     //first filter out invalid directions, then start a timer to move in the last direction
     //after a certain time if there is no other user input, then calculate the snake's new
     //position and check for a collision in the body by checking for duplicates in the list
     //of the body coordinates
     override fun apply(upstream: Observable<Direction>): ObservableSource<SnekData> {
-        return upstream
+
+        val snakeData : Observable<SnekData> = upstream
+            .distinctUntilChanged {last, current ->
+                last == current || last == current.flip()
+            }
+            .scan(startData, processGameData)
+            .takeWhile { it !is Finished }
+
+        val gameRepeat: Observable<Direction> = Observable.combineLatest(snakeData, upstream,
+            BiFunction<SnekData, Direction, Pair<Int, Direction>> { snake, dir ->
+                Pair(snake.body.size - SnekSettings.START_SIZE, dir)
+            })
+            .switchMap {(length, dir) ->
+                Observable
+                    .interval(0, slownessFromLength(length), TimeUnit.MILLISECONDS)
+                    .map{ dir }
+            }
+
+        val disposable = upstream
             .distinctUntilChanged { last, current ->
                 last == current || last == current.flip()
             }
+                /*
             .switchMap { dir ->
                 Observable
                     .interval(0, SnekSettings.SNAKE_SLOWNESS_IN_MS, TimeUnit.MILLISECONDS)
                     .map { dir }
             }
-            .scan(Apple(
-                body  = ArrayList((0 until SnekSettings.START_SIZE).map {Coords(0, it)}),
-                apple = Coords(Random.nextInt(1, SnekSettings.GRID_WIDTH), Random.nextInt(SnekSettings.START_SIZE, SnekSettings.GRID_HEIGHT))
-            ), processGameData)
-            .takeWhile { it !is Finished}
+            */
+                /*
+            .withLatestFrom(stream) { newDirection: Direction, snake: SnekData ->
+                when (snake) {
+                    is Moveable -> {snake.direction = newDirection}
+                    else        -> Finished as SnekData
+                }
+
+                snake
+            }
+                */
+
             .doOnNext { p -> Log.d(TAG, "New value in snake $p") }
+
+        //TODO actual return
+        return snakeData
     }
 
     //move the tile by destructuring the coordinates of the tile
@@ -49,24 +83,28 @@ object GameModel: ObservableTransformer<GameModel.Direction, SnekData> {
     }
 
     private val processGameData: BiFunction<SnekData, Direction, SnekData>
-            = BiFunction { snake, direction ->
+            = BiFunction { snake, newDir ->
         //modify the snake's body
         snake.run {
 
-            if (snake is Move || snake is Apple) {
-                //move the snake
-                body.apply {
-                    //snake grows by not removing the tail end of the body
-                    if (snake is Move) {
-                        //remove the last element of the body
-                        removeAt(lastIndex)
+            when(snake) {
+                is Moveable -> {
+                    //move the snake
+                    body.apply {
+                        //snake grows by not removing the tail end of the body
+                        if (snake is Move) {
+                            //remove the last element of the body
+                            removeAt(lastIndex)
+                        }
+
+                        //add a new head, which is the old head "translated by the movement direction"
+                        add(
+                            0,
+                            moveHead(first(), newDir)
+                        )
                     }
 
-                    //add a new head, which is the old head "translated by the movement direction"
-                    add(
-                        0,
-                        moveHead(first(), direction)
-                    )
+                    snake.direction = newDir
                 }
             }
 
@@ -105,9 +143,9 @@ object GameModel: ObservableTransformer<GameModel.Direction, SnekData> {
 
                 Log.d(TAG, "New Apple was generated at $newApple")
 
-                Apple(body, newApple)
+                Apple(body, newApple, direction)
             } else {
-                Move(body, apple)
+                Move(body, apple, direction)
             }
         }
     }
@@ -130,9 +168,10 @@ object GameModel: ObservableTransformer<GameModel.Direction, SnekData> {
 
     //snake starts vertically in length with a random apple
     //position (but not in the snake) and with 0 points
-    val startData = GameData(
-        body   = ArrayList((0 until SnekSettings.START_SIZE).map { Coords(0, it) }),
-        apple  = Coords(Random.nextInt(1, SnekSettings.GRID_WIDTH), Random.nextInt(SnekSettings.START_SIZE, SnekSettings.GRID_HEIGHT)),
-        points = 0
+    val startData = Apple(
+        body      = ArrayList((0 until SnekSettings.START_SIZE).map { Coords(0, it) }),
+        apple     = Coords(Random.nextInt(1, SnekSettings.GRID_WIDTH),
+                           Random.nextInt(SnekSettings.START_SIZE, SnekSettings.GRID_HEIGHT)),
+        direction = Direction.RIGHT
     )
 }

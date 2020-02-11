@@ -18,10 +18,15 @@ class ScoreUpdate(body: ArrayList<Coords>,
 
 
 sealed class SnekData(val body: ArrayList<Coords>)
-sealed class Moveable(body: ArrayList<Coords>, val apple: Coords) : SnekData(body)
+sealed class Moveable(body: ArrayList<Coords>, val apple: Coords, var direction: GameModel.Direction) : SnekData(body)
 
-class Apple(body: ArrayList<Coords>, apple: Coords) : Moveable(body, apple)
-class Move(body: ArrayList<Coords>, apple: Coords) : Moveable(body, apple)
+class Apple(body:      ArrayList<Coords>,
+            apple:     Coords,
+            direction: GameModel.Direction) : Moveable(body, apple, direction)
+class Move (body:      ArrayList<Coords>,
+            apple:     Coords,
+            direction: GameModel.Direction) : Moveable(body, apple, direction)
+
 class Over(body: ArrayList<Coords>) : SnekData(body)
 object Finished : SnekData(arrayListOf())
 

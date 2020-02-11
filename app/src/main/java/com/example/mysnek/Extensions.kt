@@ -37,3 +37,5 @@ fun Int.colorToRGBAFloatArray(): FloatArray {
         maskToRange(0xFF000000.toInt(), 24)  //A
     )
 }
+
+fun <T, R> pair(t: T, r: R) = Pair(t, r)
