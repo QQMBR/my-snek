@@ -2,84 +2,20 @@ package com.example.mysnek
 
 import android.util.Log
 import io.reactivex.Observable
-import io.reactivex.ObservableSource
-import io.reactivex.ObservableTransformer
 import io.reactivex.functions.BiFunction
 import io.reactivex.functions.Predicate
+import io.reactivex.observables.ConnectableObservable
+import io.reactivex.rxkotlin.Observables
+import io.reactivex.subjects.BehaviorSubject
 import java.util.concurrent.TimeUnit
+import kotlin.math.exp
 import kotlin.random.Random
 
-object GameModel: ObservableTransformer<GameModel.Direction, SnekData> {
+class GameModel(upstream: Observable<Direction>) {
 
     //TODO implement
-    private fun slownessFromLength(length: Int): Long = length.toLong()
-
-    private fun <T, R> biPair(): BiFunction<T, R, Pair<T, R>> = BiFunction {a, b -> Pair(a, b)}
-
-    //take a stream of directions and transform it to a stream of the snake's body positions
-    //first filter out invalid directions, then start a timer to move in the last direction
-    //after a certain time if there is no other user input, then calculate the snake's new
-    //position and check for a collision in the body by checking for duplicates in the list
-    //of the body coordinates
-    override fun apply(upstream: Observable<Direction>): ObservableSource<SnekData> {
-
-        val snakeData : Observable<SnekData> = upstream
-            .distinctUntilChanged {last, current ->
-                last == current || last == current.flip()
-            }
-            .scan(startData, processGameData)
-            .takeWhile { it !is Finished }
-
-        val gameRepeat: Observable<Direction> = Observable.combineLatest(snakeData, upstream,
-            BiFunction<SnekData, Direction, Pair<Int, Direction>> { snake, dir ->
-                Pair(snake.body.size - SnekSettings.START_SIZE, dir)
-            })
-            .switchMap {(length, dir) ->
-                Observable
-                    .interval(0, slownessFromLength(length), TimeUnit.MILLISECONDS)
-                    .map{ dir }
-            }
-
-        val disposable = upstream
-            .distinctUntilChanged { last, current ->
-                last == current || last == current.flip()
-            }
-                /*
-            .switchMap { dir ->
-                Observable
-                    .interval(0, SnekSettings.SNAKE_SLOWNESS_IN_MS, TimeUnit.MILLISECONDS)
-                    .map { dir }
-            }
-            */
-                /*
-            .withLatestFrom(stream) { newDirection: Direction, snake: SnekData ->
-                when (snake) {
-                    is Moveable -> {snake.direction = newDirection}
-                    else        -> Finished as SnekData
-                }
-
-                snake
-            }
-                */
-
-            .doOnNext { p -> Log.d(TAG, "New value in snake $p") }
-
-        //TODO actual return
-        return snakeData
-    }
-
-    //move the tile by destructuring the coordinates of the tile
-    //and the vectorized direction and adding the components
-    //of the vector to the coordinates
-    private val moveHead
-            = { (x, y): Coords, dir: Direction ->
-        { (dx, dy): Coords ->
-            Coords(x + dx, y + dy)
-        } (dir.vectorize())
-    }
-
-    private fun speedUp(p: Pair<Long, Direction>, dir: Direction): Pair<Long, Direction> {
-        return Pair(p.first - 10, dir)
+    private fun slownessFromLength(length: Int): Long {
+        return (exp(length.toDouble()*-SnekSettings.SNAKE_ACCELERATION)*SnekSettings.SNAKE_SLOWNESS_IN_MS).toLong()
     }
 
     private val processGameData: BiFunction<SnekData, Direction, SnekData>
@@ -103,14 +39,73 @@ object GameModel: ObservableTransformer<GameModel.Direction, SnekData> {
                             moveHead(first(), newDir)
                         )
                     }
-
-                    snake.direction = newDir
                 }
             }
 
             //check for collisions and apple eating
             processMove(this)
         }
+    }
+
+    private val score : BehaviorSubject<Int> = BehaviorSubject.createDefault(0)
+
+    private val slowness: Observable<Unit> = score
+        .distinctUntilChanged()
+        .map { slownessFromLength(it) }
+        .switchMap {t ->
+            Observable.interval(t, t, TimeUnit.MILLISECONDS)
+                .map { Unit }
+                .doOnNext { Log.d(TAG, "Slowness = $t") }
+        }
+        .share()
+
+    /*
+    slowness
+        .withLatestFrom(upstream
+            .distinctUntilChanged { last, current ->
+                last == current || current == last.flip()
+            },
+            BiFunction<Unit, Direction, Direction> { _, dir ->
+                dir
+            }
+        )
+     */
+    private fun Observable<Direction>.onlyAllowedDirections() : Observable<Direction> =
+        this.distinctUntilChanged { last, current ->
+            last == current || current == last.flip()
+        }
+
+    //TODO now the slowness stream may emit straight after upstream
+    val snakeData : ConnectableObservable<SnekData> = Observables
+        .combineLatest(upstream.onlyAllowedDirections(), slowness) { dir, _ ->
+            dir
+        }
+        .scan(getFirstApple(), processGameData)
+        .doOnNext { otherSnake ->
+            Log.d(TAG, "New snake data = $otherSnake")
+        }
+        .publish()
+
+    init {
+        snakeData
+            .map { snek -> snek.body.size - SnekSettings.START_SIZE - 1}
+            .distinctUntilChanged()
+            .doOnNext { x -> Log.d(TAG, "New score = $x")}
+            .subscribe(score)
+    }
+
+    //move the tile by destructuring the coordinates of the tile
+    //and the vectorized direction and adding the components
+    //of the vector to the coordinates
+    private val moveHead
+            = { (x, y): Coords, dir: Direction ->
+        { (dx, dy): Coords ->
+            Coords(x + dx, y + dy)
+        } (dir.vectorize())
+    }
+
+    private fun speedUp(p: Pair<Long, Direction>, dir: Direction): Pair<Long, Direction> {
+        return Pair(p.first - 10, dir)
     }
 
     private val processMove : (SnekData) -> SnekData = { snake ->
@@ -143,9 +138,9 @@ object GameModel: ObservableTransformer<GameModel.Direction, SnekData> {
 
                 Log.d(TAG, "New Apple was generated at $newApple")
 
-                Apple(body, newApple, direction)
+                Apple(body, newApple)
             } else {
-                Move(body, apple, direction)
+                Move(body, apple)
             }
         }
     }
@@ -164,14 +159,20 @@ object GameModel: ObservableTransformer<GameModel.Direction, SnekData> {
     //simple enum for all the directions the snake can move in
     enum class Direction { UP, DOWN, LEFT, RIGHT }
 
-    const val TAG = "GameModel"
+    companion object {
 
-    //snake starts vertically in length with a random apple
-    //position (but not in the snake) and with 0 points
-    val startData = Apple(
-        body      = ArrayList((0 until SnekSettings.START_SIZE).map { Coords(0, it) }),
-        apple     = Coords(Random.nextInt(1, SnekSettings.GRID_WIDTH),
-                           Random.nextInt(SnekSettings.START_SIZE, SnekSettings.GRID_HEIGHT)),
-        direction = Direction.RIGHT
-    )
+
+        const val TAG = "GameModel"
+
+        //snake starts vertically in length with a random apple
+        //position (but not in the snake) and with 0 points
+        fun getFirstApple() : Apple
+                = Apple(
+                    body = ArrayList((0 until SnekSettings.START_SIZE).map { Coords(0, it) }),
+                    apple = Coords(
+                    Random.nextInt(1, SnekSettings.GRID_WIDTH),
+                    Random.nextInt(SnekSettings.START_SIZE, SnekSettings.GRID_HEIGHT)
+                    )
+        )
+    }
 }

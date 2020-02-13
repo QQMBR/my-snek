@@ -29,8 +29,11 @@ class MainActivity : AppCompatActivity() {
         //connect the ViewModel's subject to the input stream and signal
         //that it may start emitting items
         gameSurfaceView.flingStream.subscribe(viewModel.events)
-        gameSurfaceView.flingStream.connect()
 
+
+        //val x = gameSurfaceView.flingStream.subscribe {Log.d(TAG, "Fling happened")}
+
+        gameSurfaceView.flingStream.connect()
         //observe changes in the live data and send them for rendering the SurfaceView
         //or handle the end of the game
         /*

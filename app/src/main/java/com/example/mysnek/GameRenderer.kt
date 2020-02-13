@@ -79,8 +79,6 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>) : GLSurfaceView
     //TODO add efficiency improvement for when only the first and last tiles have been moved
     //TODO handle case where there are more tiles than coordinates
     private fun renderTiles(coords: ArrayList<Coords>) {
-        Log.d(TAG, "Updating tiles $coords")
-        
         if (tiles.size <= coords.size) {
             with(tiles.iterator().withIndex()) {
                 forEach { (index, tile) ->

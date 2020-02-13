@@ -16,10 +16,17 @@ class GameViewModel : ViewModel(),
 
     val events = PublishSubject.create<GameModel.Direction>()
 
+    private val gameModel = GameModel(events)
+
     init {
         //events stream contains the input information, apply the game
         //transformation to get the stream of the snake's body
-        GameModel.apply(events).subscribe(this)
+        //GameModel.apply(events).subscribe(this)
+
+        gameModel.snakeData.also {
+            it.subscribe(this)
+            it.connect()
+        }
     }
 
     override fun onComplete() {
@@ -36,8 +43,8 @@ class GameViewModel : ViewModel(),
 
         //liveGameData.postValue(UpdateSnake(game.body))
         when (game) {
-            is Over -> liveGameData.postValue(GameOver2(game.body.size - SnekSettings.START_SIZE))
-            is Move -> liveGameData.postValue(UpdateBody(game.body))
+            is Over  -> liveGameData.postValue(GameOver2(game.body.size - SnekSettings.START_SIZE))
+            is Move  -> liveGameData.postValue(UpdateBody(game.body))
             is Apple -> liveGameData.postValue(UpdateApple(game.body, game.apple))
         }
     }
