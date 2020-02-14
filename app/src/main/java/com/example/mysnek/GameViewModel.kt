@@ -18,6 +18,8 @@ class GameViewModel : ViewModel(),
     private val gameModel = GameModel(events)
 
     init {
+
+        Log.d(TAG, "Init GameView")
         //events stream contains the input information, apply the game
         //transformation to get the stream of the snake's body
         //GameModel.apply(events).subscribe(this)
