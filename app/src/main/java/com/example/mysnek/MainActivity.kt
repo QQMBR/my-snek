@@ -18,42 +18,19 @@ class MainActivity : AppCompatActivity() {
 
         //create a ViewModel using the stream of directions from the SurfaceView
         val viewModel: GameViewModel by viewModels()
-        /*
-        disposable = gameSurfaceView.flingStream.subscribeBy (
-            onNext = {Log.d(TAG, "onNext")},
-            onComplete = {Log.d(TAG, "onComplete")},
-            onError = {Log.d(TAG, "onError")}
-        )
-        */
 
         //connect the ViewModel's subject to the input stream and signal
         //that it may start emitting items
         gameSurfaceView.flingStream.subscribe(viewModel.events)
 
-
-        //val x = gameSurfaceView.flingStream.subscribe {Log.d(TAG, "Fling happened")}
-
         gameSurfaceView.flingStream.connect()
+
         //observe changes in the live data and send them for rendering the SurfaceView
         //or handle the end of the game
-        /*
         viewModel.liveGameData.observe(this, Observer {
             when (it) {
-                is GameOver    -> gameOver()
-                is UpdateSnake -> gameSurfaceView.renderTiles(it.coords)
-                is UpdateAll   -> {
-                    gameSurfaceView.renderTiles(it.coords)
-                    gameSurfaceView.renderApple(it.newApple)
-                    Log.d(TAG, "New score = ${it.score}")
-                }
-            }
-        })
-         */
-
-        viewModel.liveGameData.observe(this, Observer {
-            when (it) {
-                is GameOver2 -> gameOver(it.score)
-                is UpdateBody -> gameSurfaceView.renderTiles(it.coords)
+                is GameOver    -> gameOver(it.score)
+                is UpdateBody  -> gameSurfaceView.renderTiles(it.coords)
                 is UpdateApple -> {
                     gameSurfaceView.renderTiles(it.coords)
                     gameSurfaceView.renderApple(it.newApple)

@@ -5,7 +5,7 @@ import io.reactivex.Observable
 import io.reactivex.functions.BiFunction
 import io.reactivex.functions.Predicate
 import io.reactivex.observables.ConnectableObservable
-import io.reactivex.rxkotlin.Observables
+import io.reactivex.rxkotlin.withLatestFrom
 import io.reactivex.subjects.BehaviorSubject
 import java.util.concurrent.TimeUnit
 import kotlin.math.exp
@@ -49,37 +49,33 @@ class GameModel(upstream: Observable<Direction>) {
 
     private val score : BehaviorSubject<Int> = BehaviorSubject.createDefault(0)
 
-    private val slowness: Observable<Unit> = score
-        .distinctUntilChanged()
-        .map { slownessFromLength(it) }
-        .switchMap {t ->
-            Observable.interval(t, t, TimeUnit.MILLISECONDS)
-                .map { Unit }
-                .doOnNext { Log.d(TAG, "Slowness = $t") }
+    private val delayedInput : Observable<Triple<Direction, Long, Long>> = upstream
+        .onlyAllowedDirections()
+        .withLatestFrom(score) { direction: Direction, latestScore: Int ->
+            Triple(direction, 0L, slownessFromLength(latestScore))
         }
-        .share()
 
-    /*
-    slowness
-        .withLatestFrom(upstream
-            .distinctUntilChanged { last, current ->
-                last == current || current == last.flip()
-            },
-            BiFunction<Unit, Direction, Direction> { _, dir ->
-                dir
-            }
-        )
-     */
+    private val delayedGame : Observable<Triple<Direction, Long, Long>> = score
+        .distinctUntilChanged()
+        .withLatestFrom(upstream) { score, latestDirection ->
+            slownessFromLength(score).let { Triple(latestDirection, it, it) }
+        }
+
+    private val slowness : Observable<Direction> = Observable
+        .merge(delayedGame, delayedInput)
+        .switchMap { (dir, initialDelay, interval) ->
+            Observable.interval(initialDelay, interval, TimeUnit.MILLISECONDS)
+                .map { dir }
+                .doOnNext { Log.d(TAG, "Slowness = $interval, direction = $dir") }
+        }
+
     private fun Observable<Direction>.onlyAllowedDirections() : Observable<Direction> =
         this.distinctUntilChanged { last, current ->
             last == current || current == last.flip()
         }
 
     //TODO now the slowness stream may emit straight after upstream
-    val snakeData : ConnectableObservable<SnekData> = Observables
-        .combineLatest(upstream.onlyAllowedDirections(), slowness) { dir, _ ->
-            dir
-        }
+    val snakeData : ConnectableObservable<SnekData> = slowness
         .scan(getFirstApple(), processGameData)
         .doOnNext { otherSnake ->
             Log.d(TAG, "New snake data = $otherSnake")

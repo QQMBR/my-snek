@@ -7,10 +7,9 @@ import io.reactivex.Observer
 import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
 
+//TODO does it even really make sense to only observe one type?
 class GameViewModel : ViewModel(),
     Observer<SnekData> {
-
-    //TODO make sure everything is properly disposed of
 
     val liveGameData = MutableLiveData<SnekEvent>()
 
@@ -39,11 +38,8 @@ class GameViewModel : ViewModel(),
     }
 
     override fun onNext(game: SnekData) {
-        //Log.d(TAG, "Lezzgo da mandem")
-
-        //liveGameData.postValue(UpdateSnake(game.body))
         when (game) {
-            is Over  -> liveGameData.postValue(GameOver2(game.body.size - SnekSettings.START_SIZE))
+            is Over  -> liveGameData.postValue(GameOver(game.body.size - SnekSettings.START_SIZE - 1))
             is Move  -> liveGameData.postValue(UpdateBody(game.body))
             is Apple -> liveGameData.postValue(UpdateApple(game.body, game.apple))
         }
