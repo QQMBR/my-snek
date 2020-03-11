@@ -13,7 +13,6 @@ import kotlin.random.Random
 
 class GameModel(upstream: Observable<Direction>) {
 
-    //TODO implement
     private fun slownessFromLength(length: Int): Long {
         return (exp(length.toDouble()*-SnekSettings.SNAKE_ACCELERATION)*SnekSettings.SNAKE_SLOWNESS_IN_MS).toLong()
     }
@@ -33,11 +32,16 @@ class GameModel(upstream: Observable<Direction>) {
                             removeAt(lastIndex)
                         }
 
-                        //add a new head, which is the old head "translated by the movement direction"
-                        add(
-                            0,
-                            moveHead(first(), newDir)
-                        )
+                        //if the snake actually moved at all
+                        //otherwise the game is paused and no movement should occur
+                        if (newDir != Direction.NONE) {
+                            //add a new head, which is the old head "translated by the movement direction"
+                            add(
+                                0,
+                                moveHead(first(), newDir)
+                            )
+
+                        }
                     }
                 }
             }
@@ -49,33 +53,51 @@ class GameModel(upstream: Observable<Direction>) {
 
     private val score : BehaviorSubject<Int> = BehaviorSubject.createDefault(0)
 
-    private val delayedInput : Observable<Triple<Direction, Long, Long>> = upstream
+    //emit the snake's new travelling direction upon each user input
+    private val inputIntervalParams : Observable<Triple<Direction, Long, Long>> = upstream
         .onlyAllowedDirections()
         .withLatestFrom(score) { direction: Direction, latestScore: Int ->
             Triple(direction, 0L, slownessFromLength(latestScore))
         }
 
-    private val delayedGame : Observable<Triple<Direction, Long, Long>> = score
+    //an observable that emits when the snake has a new score and needs to have
+    //it's speed recalculated so that it may move faster even when travelling
+    //in a straight line
+    private val gameIntervalParams : Observable<Triple<Direction, Long, Long>> = score
         .distinctUntilChanged()
         .withLatestFrom(upstream) { score, latestDirection ->
+            Log.d(TAG, "Latest direction is: $latestDirection")
             slownessFromLength(score).let { Triple(latestDirection, it, it) }
         }
 
+    //start the interval that moves the snake along
+    //at a certain speed without user input
     private val slowness : Observable<Direction> = Observable
-        .merge(delayedGame, delayedInput)
+        .merge(gameIntervalParams, inputIntervalParams)
         .switchMap { (dir, initialDelay, interval) ->
-            Observable.interval(initialDelay, interval, TimeUnit.MILLISECONDS)
-                .map { dir }
-                .doOnNext { Log.d(TAG, "Slowness = $interval, direction = $dir") }
+            if (dir != Direction.NONE) {
+                Observable.interval(initialDelay, interval, TimeUnit.MILLISECONDS)
+                    .map { dir }
+                    .doOnNext { Log.d(TAG, "Slowness = $interval, direction = $dir") }
+            }
+            else {
+                Observable.just(Direction.NONE)
+            }
         }
 
     private fun Observable<Direction>.onlyAllowedDirections() : Observable<Direction> =
         this.distinctUntilChanged { last, current ->
-            last == current || current == last.flip()
+            //always let NONE through
+            if (current == Direction.NONE) {
+                false
+            }
+            else {
+                last == current || current == last.flip()
+            }
         }
 
-    //TODO now the slowness stream may emit straight after upstream
     val snakeData : ConnectableObservable<SnekData> = slowness
+        .filter { x -> x != Direction.NONE}
         .scan(getFirstApple(), processGameData)
         .doOnNext { otherSnake ->
             Log.d(TAG, "New snake data = $otherSnake")
@@ -98,10 +120,6 @@ class GameModel(upstream: Observable<Direction>) {
         { (dx, dy): Coords ->
             Coords(x + dx, y + dy)
         } (dir.vectorize())
-    }
-
-    private fun speedUp(p: Pair<Long, Direction>, dir: Direction): Pair<Long, Direction> {
-        return Pair(p.first - 10, dir)
     }
 
     private val processMove : (SnekData) -> SnekData = { snake ->
@@ -153,11 +171,12 @@ class GameModel(upstream: Observable<Direction>) {
     }
 
     //simple enum for all the directions the snake can move in
-    enum class Direction { UP, DOWN, LEFT, RIGHT }
+    enum class Direction : GameControl { UP, DOWN, LEFT, RIGHT, NONE }
+    enum class Flow : GameControl { PAUSE, SHOW_APPLE }
+    
+    interface GameControl
 
     companion object {
-
-
         const val TAG = "GameModel"
 
         //snake starts vertically in length with a random apple

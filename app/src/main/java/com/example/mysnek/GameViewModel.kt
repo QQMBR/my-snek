@@ -13,6 +13,8 @@ class GameViewModel : ViewModel(),
 
     val liveGameData = MutableLiveData<SnekEvent>()
 
+    var configChange = false
+
     val events = PublishSubject.create<GameModel.Direction>()
 
     private val gameModel = GameModel(events)
@@ -30,6 +32,14 @@ class GameViewModel : ViewModel(),
         }
     }
 
+    fun requestApple() {
+
+    }
+
+    fun pauseGame() {
+        //send signal to not move to the model
+        events.onNext(GameModel.Direction.NONE)
+    }
     override fun onComplete() {
         Log.d(TAG, "Man's done up in this")
         //liveGameData.postValue(Over(arrayListOf()))

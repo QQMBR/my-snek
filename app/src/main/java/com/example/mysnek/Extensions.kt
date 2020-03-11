@@ -9,6 +9,7 @@ fun GameModel.Direction.flip()
         GameModel.Direction.LEFT  -> GameModel.Direction.RIGHT
         GameModel.Direction.DOWN  -> GameModel.Direction.UP
         GameModel.Direction.RIGHT -> GameModel.Direction.LEFT
+        GameModel.Direction.NONE  -> GameModel.Direction.NONE
     }
 
 //turn the direction into a unit vector representing
@@ -19,6 +20,7 @@ fun GameModel.Direction.vectorize(): Coords
         GameModel.Direction.LEFT  -> Coords(-1,  0)
         GameModel.Direction.DOWN  -> Coords( 0,  1)
         GameModel.Direction.RIGHT -> Coords( 1,  0)
+        GameModel.Direction.NONE  -> Coords( 0,  0)
     }
 
 fun <T> Predicate<T>.not(): Predicate<T> {
@@ -37,5 +39,3 @@ fun Int.colorToRGBAFloatArray(): FloatArray {
         maskToRange(0xFF000000.toInt(), 24)  //A
     )
 }
-
-fun <T, R> pair(t: T, r: R) = Pair(t, r)

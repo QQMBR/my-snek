@@ -5,7 +5,10 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.Observer
+import androidx.lifecycle.OnLifecycleEvent
 
 class MainActivity : AppCompatActivity() {
 
@@ -39,6 +42,17 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+
+        lifecycle.addObserver(object : LifecycleObserver {
+
+            @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+            fun pause() {
+                Log.d(TAG, "Paused from LifecycleObserver")
+                viewModel.pauseGame()
+            }
+        })
+
+        viewModel.requestApple()
     }
 
     private fun gameOver(score: Int) {
@@ -62,6 +76,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         Log.d(TAG, "Start")
+
+
         super.onStart()
     }
 
