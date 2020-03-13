@@ -8,3 +8,6 @@ sealed class SnekMoveEvent : SnekEvent()
 
 data class UpdateBody(val coords: ArrayList<Coords>) : SnekMoveEvent()
 data class UpdateApple(val coords: ArrayList<Coords>, val newApple: Coords) : SnekMoveEvent()
+
+object Pause : SnekEvent()
+data class Resume(val newEvent: SnekEvent) : SnekEvent()

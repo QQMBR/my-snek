@@ -9,6 +9,7 @@ import java.nio.IntBuffer
 open class Square(private var color: FloatArray) {
     companion object {
         const val COORDS_PER_VERTEX = 3
+        const val TAG = "Square"
 
         val coords = floatArrayOf(
             -0.5f,  0.5f, 0.0f, //top left
@@ -18,7 +19,6 @@ open class Square(private var color: FloatArray) {
         )
     }
 
-    val TAG = "${this} Square"
     private val drawOrder = shortArrayOf(0, 1, 2, 0, 2, 3)
 
     //TODO abstract code a bit

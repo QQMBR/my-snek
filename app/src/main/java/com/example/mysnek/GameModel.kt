@@ -11,80 +11,106 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.exp
 import kotlin.random.Random
 
-class GameModel(upstream: Observable<Direction>) {
+class GameModel(upstream: Observable<GameControl>) {
 
     private fun slownessFromLength(length: Int): Long {
         return (exp(length.toDouble()*-SnekSettings.SNAKE_ACCELERATION)*SnekSettings.SNAKE_SLOWNESS_IN_MS).toLong()
     }
 
-    private val processGameData: BiFunction<SnekData, Direction, SnekData>
+    private val processGameData: BiFunction<SnekData, GameControl, SnekData>
             = BiFunction { snake, newDir ->
-        //modify the snake's body
-        snake.run {
-
-            when(snake) {
-                is Moveable -> {
-                    //move the snake
-                    body.apply {
-                        //snake grows by not removing the tail end of the body
-                        if (snake is Move) {
-                            //remove the last element of the body
-                            removeAt(lastIndex)
+        when (newDir) {
+            is Direction -> {
+                //modify the snake's body
+                snake.run {
+                    when(snake) {
+                        is Moveable -> {
+                            //move the snake
+                            body.apply {
+                                //snake grows by not removing the tail end of the body
+                                if (snake is Move) {
+                                    //remove the last element of the body
+                                    removeAt(lastIndex)
+                                }
+                                add(
+                                    0,
+                                    moveHead(first(), newDir)
+                                )
+                            }
                         }
+                    }
 
-                        //if the snake actually moved at all
-                        //otherwise the game is paused and no movement should occur
-                        if (newDir != Direction.NONE) {
-                            //add a new head, which is the old head "translated by the movement direction"
-                            add(
-                                0,
-                                moveHead(first(), newDir)
-                            )
-
+                    //check for collisions and apple eating
+                    processMove(this)
+                }
+            }
+            else -> {
+                when (newDir) {
+                    Flow.PAUSE -> {
+                        //no changes are made to the snake
+                        snake
+                    }
+                    //Flow.REQUEST_APPLE
+                    //turn any Move into an Apple containing the same information
+                    //the Apples state should be displayed though
+                    else -> {
+                        //
+                        when (snake) {
+                            is Move -> Apple(snake.body, snake.apple)
+                            else    -> snake
                         }
                     }
                 }
             }
-
-            //check for collisions and apple eating
-            processMove(this)
         }
+
     }
 
     private val score : BehaviorSubject<Int> = BehaviorSubject.createDefault(0)
 
     //emit the snake's new travelling direction upon each user input
-    private val inputIntervalParams : Observable<Triple<Direction, Long, Long>> = upstream
-        .onlyAllowedDirections()
-        .withLatestFrom(score) { direction: Direction, latestScore: Int ->
-            Triple(direction, 0L, slownessFromLength(latestScore))
+    private val inputIntervalParams : Observable<Triple<GameControl, Long, Long>> = upstream
+        //.ofType<Direction>()
+        .onlyAllowedControls()
+        .withLatestFrom(score) { control: GameControl, latestScore: Int ->
+            Triple(control, 0L, slownessFromLength(latestScore))
         }
 
     //an observable that emits when the snake has a new score and needs to have
     //it's speed recalculated so that it may move faster even when travelling
     //in a straight line
-    private val gameIntervalParams : Observable<Triple<Direction, Long, Long>> = score
+    private val gameIntervalParams : Observable<Triple<GameControl, Long, Long>> = score
         .distinctUntilChanged()
         .withLatestFrom(upstream) { score, latestDirection ->
             Log.d(TAG, "Latest direction is: $latestDirection")
             slownessFromLength(score).let { Triple(latestDirection, it, it) }
         }
 
+    private fun intervalFromDir(dir: Direction, initialDelay: Long, interval: Long) =
+        Observable.interval(initialDelay, interval, TimeUnit.MILLISECONDS)
+            .map { dir }
+            .doOnNext { Log.d(TAG, "Slowness = $interval, direction = $dir") }
+
     //start the interval that moves the snake along
     //at a certain speed without user input
-    private val slowness : Observable<Direction> = Observable
+    private val slowness : Observable<GameControl> = Observable
         .merge(gameIntervalParams, inputIntervalParams)
         .switchMap { (dir, initialDelay, interval) ->
-            if (dir != Direction.NONE) {
-                Observable.interval(initialDelay, interval, TimeUnit.MILLISECONDS)
-                    .map { dir }
-                    .doOnNext { Log.d(TAG, "Slowness = $interval, direction = $dir") }
-            }
-            else {
-                Observable.just(Direction.NONE)
+            when (dir) {
+                is Direction -> intervalFromDir(dir, initialDelay, interval)
+                else -> Observable.just(dir)
             }
         }
 
+    private fun Observable<GameControl>.onlyAllowedControls() : Observable<GameControl> =
+        this.distinctUntilChanged { last, current ->
+            if (last is Direction && current is Direction) {
+                last == current || current == last.flip()
+            }
+            //otherwise let everything through - a flow is always distinct from a direction
+            //and all flows should be let through
+            else false
+        }
     private fun Observable<Direction>.onlyAllowedDirections() : Observable<Direction> =
         this.distinctUntilChanged { last, current ->
             //always let NONE through
@@ -173,7 +199,7 @@ class GameModel(upstream: Observable<Direction>) {
     //simple enum for all the directions the snake can move in
     enum class Direction : GameControl { UP, DOWN, LEFT, RIGHT, NONE }
     enum class Flow : GameControl { PAUSE, SHOW_APPLE }
-    
+
     interface GameControl
 
     companion object {
@@ -181,13 +207,13 @@ class GameModel(upstream: Observable<Direction>) {
 
         //snake starts vertically in length with a random apple
         //position (but not in the snake) and with 0 points
-        fun getFirstApple() : Apple
-                = Apple(
+        fun getFirstApple() : Move
+                = Move(
                     body = ArrayList((0 until SnekSettings.START_SIZE).map { Coords(0, it) }),
                     apple = Coords(
                     Random.nextInt(1, SnekSettings.GRID_WIDTH),
                     Random.nextInt(SnekSettings.START_SIZE, SnekSettings.GRID_HEIGHT)
                     )
-        )
+                )
     }
 }

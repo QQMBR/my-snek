@@ -33,14 +33,29 @@ class MainActivity : AppCompatActivity() {
         //observe changes in the live data and send them for rendering the SurfaceView
         //or handle the end of the game
         viewModel.liveGameData.observe(this, Observer {
-            when (it) {
-                is GameOver    -> gameOver(it.score)
-                is UpdateBody  -> gameSurfaceView.renderTiles(it.coords)
-                is UpdateApple -> {
-                    gameSurfaceView.renderTiles(it.coords)
-                    gameSurfaceView.renderApple(it.newApple)
+
+            //a function that recursively calls itself if the data is enclosed in a
+            //resume
+            fun handleData(data: SnekEvent) {
+                when (data) {
+                    is GameOver    -> gameOver(data.score)
+                    is UpdateBody  -> gameSurfaceView.renderTiles(data.coords)
+                    is UpdateApple -> {
+                        gameSurfaceView.renderTiles(data.coords)
+                        gameSurfaceView.renderApple(data.newApple)
+                    }
+                    is Pause -> {
+                        gameSurfaceView.pauseGame()
+                    }
+                    is Resume -> {
+                        Log.d(TAG, "Resuming")
+                        gameSurfaceView.resumeGame()
+                        handleData(data.newEvent)
+                    }
                 }
             }
+
+            handleData(it)
         })
 
         lifecycle.addObserver(object : LifecycleObserver {

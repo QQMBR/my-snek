@@ -18,6 +18,8 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>) : GLSurfaceView
 
     private var created = false
 
+    private var overlay: Square? = null
+
     //the objects that will be drawn by this renderer
 
     //a square representing the background of the playing field
@@ -74,6 +76,27 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>) : GLSurfaceView
         }
     }
 
+    fun pauseSafe() {
+        queueIfNotCreated {
+            pause()
+        }
+    }
+
+    fun resumeSafe() {
+        queueIfNotCreated {
+            resume()
+        }
+    }
+
+    private fun resume() {
+        overlay = null
+    }
+
+    private fun pause() {
+        Log.d(TAG, "Setting an overlay")
+        //TODO why need to invert color
+        overlay = Square(floatArrayOf(0f, 0f, 0f, 0.4f))
+    }
     //copy a list of coordinates over into the x and y
     //coordinates of all tiles in the list
     //TODO add efficiency improvement for when only the first and last tiles have been moved
@@ -112,7 +135,6 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>) : GLSurfaceView
         }
     }
 
-
     private fun renderApple(coords: Coords) {
         if (!::apple.isInitialized) {
             apple = lazy {Tile(grid, coords, getColor(SnekColors.APPLE))}
@@ -123,6 +145,9 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>) : GLSurfaceView
     }
 
     override fun onDrawFrame(p0: GL10?) {
+        GLES20.glEnable(GLES20.GL_BLEND)
+        GLES20.glBlendFunc(GLES20.GL_ONE_MINUS_SRC_ALPHA, GLES20.GL_SRC_ALPHA)
+
         //calculate the projection and view transformation
         Matrix.multiplyMM(mVPMatrix, 0, projectionMatrix, 0, viewMatrix, 0)
 
@@ -137,6 +162,9 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>) : GLSurfaceView
         if (::apple.isInitialized) {
             apple.value.draw(mVPMatrix)
         }
+
+        //if there is an overlay, draw it
+        overlay?.draw(mVPMatrix)
     }
 
     override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {

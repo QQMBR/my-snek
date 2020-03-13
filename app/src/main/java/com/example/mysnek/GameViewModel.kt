@@ -13,9 +13,9 @@ class GameViewModel : ViewModel(),
 
     val liveGameData = MutableLiveData<SnekEvent>()
 
-    var configChange = false
+    var isPaused = false
 
-    val events = PublishSubject.create<GameModel.Direction>()
+    val events = PublishSubject.create<GameModel.GameControl>()
 
     private val gameModel = GameModel(events)
 
@@ -32,14 +32,18 @@ class GameViewModel : ViewModel(),
         }
     }
 
+    //request an apple to be shown
     fun requestApple() {
-
+        events.onNext(GameModel.Flow.SHOW_APPLE)
     }
 
+    //send signal to pause the game (i.e. not move the snake)
     fun pauseGame() {
-        //send signal to not move to the model
-        events.onNext(GameModel.Direction.NONE)
+        events.onNext(GameModel.Flow.PAUSE)
+        liveGameData.postValue(Pause)
+        isPaused = true
     }
+
     override fun onComplete() {
         Log.d(TAG, "Man's done up in this")
         //liveGameData.postValue(Over(arrayListOf()))
@@ -50,10 +54,26 @@ class GameViewModel : ViewModel(),
     }
 
     override fun onNext(game: SnekData) {
-        when (game) {
-            is Over  -> liveGameData.postValue(GameOver(game.body.size - SnekSettings.START_SIZE - 1))
-            is Move  -> liveGameData.postValue(UpdateBody(game.body))
-            is Apple -> liveGameData.postValue(UpdateApple(game.body, game.apple))
+        val inner = when (game) {
+            is Over  -> GameOver(game.body.size - SnekSettings.START_SIZE - 1)
+            is Move  -> UpdateBody(game.body)
+            is Apple -> UpdateApple(game.body, game.apple)
+            else -> null
+        }
+
+        //all that needs to be done is to determine
+        //what we post to the activity
+        inner?.also {
+            liveGameData.postValue(
+                //if the game was paused we
+                //also send signal to resume the game
+                if (isPaused) {
+                    Resume(it)
+                }
+                else {
+                    it
+                }
+            )
         }
     }
 

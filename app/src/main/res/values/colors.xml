@@ -9,6 +9,6 @@
     <color name="colorBody">#26715e</color>
     <color name="colorHead">#096747</color>
     <color name="colorApple">#e13843</color>
-    <color name="colorBackground">#333333</color>
+    <color name="colorBackground">#ff333333</color>
     <color name="colorGridBackground">#262626</color>
 </resources>

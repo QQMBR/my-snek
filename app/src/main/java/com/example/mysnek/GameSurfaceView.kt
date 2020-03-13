@@ -54,6 +54,9 @@ class GameSurfaceView(context: Context): GLSurfaceView(context) {
 
     fun renderApple(coords: Coords) = queueEvent { renderer.renderAppleSafe(coords) }
 
+    fun pauseGame() = queueEvent { renderer.pauseSafe() }
+    fun resumeGame() = queueEvent { renderer.resumeSafe() }
+
     //a gesture detector that can also be used to create a new Observable
     //listens only to fling events and calls onNext each time a fling is registered
     //with the determined direction of the fling
