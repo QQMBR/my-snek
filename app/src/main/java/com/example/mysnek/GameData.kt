@@ -11,20 +11,20 @@ sealed class SnekData(val body: ArrayList<Coords>) {
         return "SnekData = $body"
     }
 }
-sealed class Moveable(body: ArrayList<Coords>, val apple: Coords) : SnekData(body) {
+sealed class Movable(body: ArrayList<Coords>, val apple: Coords) : SnekData(body) {
     override fun toString(): String {
         return super.toString().plus(", $apple")
     }
 }
 
 class Apple(body:  ArrayList<Coords>,
-            apple: Coords) : Moveable(body, apple) {
+            apple: Coords) : Movable(body, apple) {
     override fun toString(): String {
         return super.toString().plus(" (Apple)")
     }
 }
 class Move (body:  ArrayList<Coords>,
-            apple: Coords) : Moveable(body, apple) {
+            apple: Coords) : Movable(body, apple) {
     override fun toString(): String {
         return super.toString().plus(" (Move)")
     }
@@ -36,11 +36,13 @@ class Over(body: ArrayList<Coords>) : SnekData(body) {
     }
 }
 
+/*
 object Finished : SnekData(arrayListOf()) {
     override fun toString(): String {
         return "Finished"
     }
 }
+ */
 
 class BaseViewModelFactory<T>(val creator: () -> T) : ViewModelProvider.Factory {
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {

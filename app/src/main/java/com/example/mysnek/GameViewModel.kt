@@ -18,7 +18,7 @@ class GameViewModel(private val settings: SnekSettings) : ViewModel(),
     val liveEventData = MutableLiveData<Event<SingleSnekEvent>>()
 
     private var isPaused = false
-    private var gameOver = true
+    //private var gameOver = true
 
     val events = PublishSubject.create<GameModel.GameControl>()
 
@@ -35,8 +35,6 @@ class GameViewModel(private val settings: SnekSettings) : ViewModel(),
     init {
         Log.d(TAG, "Init GameView")
 
-        //events.onNext(GameModel.Flow.START_GAME)
-
         gameModel.snakeData.also {
             it.subscribe(this)
             it.connect()
@@ -47,12 +45,14 @@ class GameViewModel(private val settings: SnekSettings) : ViewModel(),
         liveEventData.value?.clear()
     }
 
+    /*
     fun startGameIfOver() {
         if (gameOver) {
-            events.onNext(GameModel.Flow.START_GAME)
+            //events.onNext(GameModel.Flow.START_GAME)
             gameOver = false
         }
     }
+     */
 
     override fun onComplete() {
         Log.d(TAG, "Man's done up in this")
@@ -70,22 +70,24 @@ class GameViewModel(private val settings: SnekSettings) : ViewModel(),
     override fun onNext(game: SnekData) {
         //firstGame = false
 
-        if (game is Moveable) {
+        Log.d(TAG, "onNext $game")
+
+        if (game is Movable) {
             liveGameData.postValue(Update(game.body, game.apple))
+        }
+        else if (game is Over) {
+            endGame(game.body.size - settings.startSize)
         }
 
         if (isPaused) {
             liveEventData.postValue(Event(Resume2))
             isPaused = false
         }
-
-        else if (game is Over) {
-            endGame(game.body.size - settings.startSize)
-        }
     }
 
     private fun endGame(score: Int) {
-        gameOver = true
+        //gameOver = true
+        Log.d(TAG, "Posting GameOver")
         liveEventData.postValue(Event(GameOver2(score)))
     }
     override fun onSubscribe(d: Disposable) {

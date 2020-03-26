@@ -21,7 +21,7 @@ class GameModel(upstream: Observable<GameControl>, private val settings: SnekSet
                 //modify the snake's body
                 snake.run {
                     when(snake) {
-                        is Moveable -> {
+                        is Movable -> {
                             //move the snake
                             body.apply {
                                 //snake grows by not removing the tail end of the body
@@ -58,9 +58,10 @@ class GameModel(upstream: Observable<GameControl>, private val settings: SnekSet
                     }
                     */
                     //use the starting apple
-                    Flow.START_GAME -> {
+                    /*Flow.START_GAME -> {
                         getFirstApple(settings.startSize, settings.gridWidth, settings.gridHeight)
                     }
+                     */
                 }
             }
             //only Flow and Direction implement interface, so this branch will never be reached
@@ -131,9 +132,11 @@ class GameModel(upstream: Observable<GameControl>, private val settings: SnekSet
 
     init {
         snakeData
-            .map { snek -> snek.body.size - settings.startSize}
-            .distinctUntilChanged()
-            .skip(1)
+            //.map { snek -> snek.body.size - settings.startSize}
+            .filter { snake -> snake is Apple}
+            .scan(0) {acc, _ -> acc + 1}
+            //.distinctUntilChanged()
+            //.skip(1)
             .doOnNext { x -> Log.d(TAG, "New score = $x")}
             .subscribe(score)
     }
@@ -155,15 +158,17 @@ class GameModel(upstream: Observable<GameControl>, private val settings: SnekSet
         }
         else {
             when (snake) {
-                is Move     -> checkApple(snake)
-                is Apple    -> checkApple(snake)
-                is Over     -> Finished
-                is Finished -> Finished
+                is Movable  -> {
+                    checkApple(snake)
+                }
+                //if the game is over, we simply restart the game, resetting the snake to the first apple
+                is Over     -> getFirstApple(settings.startSize, settings.gridWidth, settings.gridHeight)
+                //is Finished -> Finished
             }
         }
     }
 
-    private val checkApple: (Moveable) -> SnekData = { snake ->
+    private val checkApple: (Movable) -> SnekData = { snake ->
         snake.run {
             if (apple == body.first()) {
 
@@ -201,7 +206,7 @@ class GameModel(upstream: Observable<GameControl>, private val settings: SnekSet
 
     //simple enum for all the directions the snake can move in
     enum class Direction : GameControl { UP, DOWN, LEFT, RIGHT }
-    enum class Flow : GameControl { PAUSE, /* SHOW_APPLE, */START_GAME }
+    enum class Flow : GameControl { PAUSE, /* SHOW_APPLE, START_GAME*/ }
 
     companion object {
         const val TAG = "GameModel"

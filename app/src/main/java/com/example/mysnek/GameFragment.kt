@@ -42,8 +42,6 @@ class GameFragment : Fragment() {
         //that it may start emitting items
         gameSurfaceView.screenStream.subscribe(viewModel.events)
 
-        viewModel.startGameIfOver()
-
         //gameSurfaceView.resumeGame()
 
         lifecycle.addObserver(object : LifecycleObserver {
