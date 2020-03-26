@@ -1,5 +1,9 @@
 package com.example.mysnek
 
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+
 data class Coords(var x: Int, var y: Int)
 
 sealed class SnekData(val body: ArrayList<Coords>) {
@@ -28,12 +32,26 @@ class Move (body:  ArrayList<Coords>,
 
 class Over(body: ArrayList<Coords>) : SnekData(body) {
     override fun toString(): String {
-        return super.toString().plus( "(Over)")
+        return super.toString().plus("(Over)")
     }
 }
+
 object Finished : SnekData(arrayListOf()) {
     override fun toString(): String {
         return "Finished"
     }
+}
+
+class BaseViewModelFactory<T>(val creator: () -> T) : ViewModelProvider.Factory {
+    override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+        return creator() as T
+    }
+}
+
+inline fun <reified T : ViewModel> Fragment.getViewModel(noinline creator: (() -> T)? = null): T {
+    return if (creator == null)
+        ViewModelProvider(this).get(T::class.java)
+    else
+        ViewModelProvider(this, BaseViewModelFactory(creator)).get(T::class.java)
 }
 

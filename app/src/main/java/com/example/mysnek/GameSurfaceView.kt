@@ -10,11 +10,14 @@ import androidx.core.view.GestureDetectorCompat
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import io.reactivex.ObservableOnSubscribe
-import io.reactivex.observables.ConnectableObservable
-import java.util.*
+import java.util.ArrayList
+import java.util.EnumMap
 import kotlin.math.absoluteValue
 
-class GameSurfaceView(context: Context): GLSurfaceView(context) {
+class GameSurfaceView(context: Context, settings: SnekSettings = SnekSettings.default): GLSurfaceView(context) {
+
+    //single parameter constructor uses the default settings
+    constructor(context: Context) : this(context, SnekSettings.default)
 
     //renders tiles representing the snake and apple on a grid of specifiable size
     //takes an enum map of color resources to color different parts of the game
@@ -27,12 +30,13 @@ class GameSurfaceView(context: Context): GLSurfaceView(context) {
 
         renderer = {id: Int -> ResourcesCompat.getColor(resources, id, null)}.run {
             GameRenderer(
-                EnumMap(mapOf(Pair(SnekColors.BACKGROUND,      this(R.color.colorBackground)),
-                    Pair(SnekColors.HEAD,            this(R.color.colorHead)),
-                    Pair(SnekColors.APPLE,           this(R.color.colorApple)),
-                    Pair(SnekColors.BODY,            this(R.color.colorBody)),
-                    Pair(SnekColors.GRID_BACKGROUND, this(R.color.colorGridBackground))
-                ))
+                EnumMap(mapOf(Pair(SnekColors.BACKGROUND,      this(R.color.colorBackground1)),
+                    Pair(SnekColors.HEAD,            this(R.color.colorHead1)),
+                    Pair(SnekColors.APPLE,           this(R.color.colorApple1)),
+                    Pair(SnekColors.BODY,            this(R.color.colorBody1)),
+                    Pair(SnekColors.GRID_BACKGROUND, this(R.color.colorGridBackground1))
+                )),
+                settings
             )
         }
 
@@ -47,29 +51,44 @@ class GameSurfaceView(context: Context): GLSurfaceView(context) {
     //render the tile at the given coordinates
     //fun renderTileAt(p: Coords) = queueEvent {renderer.renderTileAt(p)}
 
-    fun renderTiles(coords: ArrayList<Coords>) {
-        Log.d(TAG, "Calling queueEvent")
-        queueEvent { renderer.renderTilesSafe(coords) }
+    fun renderAll(coords: ArrayList<Coords>, apple: Coords) {
+        queueEvent {
+            renderer.renderAllSafe(coords, apple)
+        }
     }
+    fun clearTiles() = queueEvent { renderer.clearTiles() }
 
-    fun renderApple(coords: Coords) = queueEvent { renderer.renderAppleSafe(coords) }
-
-    fun pauseGame() = queueEvent { renderer.pauseSafe() }
-    fun resumeGame() = queueEvent { renderer.resumeSafe() }
+    fun pauseGame() = queueEvent { renderer.pauseSafe() }.also {Log.d(TAG, "Pausing the game")}
+    fun resumeGame() = queueEvent { renderer.resumeSafe() }.also { Log.d(TAG, "Removing overlay") }
 
     //a gesture detector that can also be used to create a new Observable
     //listens only to fling events and calls onNext each time a fling is registered
     //with the determined direction of the fling
     private val gestureDetector = object
         : GestureDetector.SimpleOnGestureListener(),
-          ObservableOnSubscribe<GameModel.Direction> {
+          ObservableOnSubscribe<GameModel.GameControl> {
 
-        private var observableEmitter: ObservableEmitter<GameModel.Direction>? = null
+        private var observableEmitter: ObservableEmitter<GameModel.GameControl>? = null
 
-        override fun subscribe(emitter: ObservableEmitter<GameModel.Direction>) {
+        override fun subscribe(emitter: ObservableEmitter<GameModel.GameControl>) {
             observableEmitter = emitter
         }
 
+        override fun onSingleTapConfirmed(e: MotionEvent?): Boolean {
+            Log.d(TAG, "Tapped at (${e?.x}, ${e?.y})")
+
+            e?.apply {
+                queueEvent {
+                    //renderer checks for the pause button having been clicked,
+                    //if yes, we send signal to stop the game
+                    if (renderer.handleTap(x, y)) {
+                        observableEmitter?.onNext(GameModel.Flow.PAUSE)
+                    }
+                }
+            }
+
+            return super.onSingleTapConfirmed(e)
+        }
         override fun onFling(
             e1: MotionEvent?,
             e2: MotionEvent?,
@@ -103,7 +122,7 @@ class GameSurfaceView(context: Context): GLSurfaceView(context) {
         }
     }
 
-    val flingStream: ConnectableObservable<GameModel.Direction> = Observable.create(gestureDetector).publish()
+    val screenStream: Observable<GameModel.GameControl> = Observable.create(gestureDetector)
 
     private val detector = GestureDetectorCompat(context, gestureDetector)
 
@@ -113,7 +132,6 @@ class GameSurfaceView(context: Context): GLSurfaceView(context) {
 
         return true
     }
-
 
     companion object {
         const val TAG = "GameSurfaceView"

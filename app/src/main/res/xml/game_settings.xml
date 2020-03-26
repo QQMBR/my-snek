@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+        xmlns:app="http://schemas.android.com/apk/res-auto">
+    <EditTextPreference
+            app:key="start_size"
+            app:title="Starting size" />
+    <SwitchPreferenceCompat
+            app:key="square_grid"
+            app:defaultValue="true"
+            app:title="Use a square grid" />
+    <EditTextPreference
+            app:key="grid_width" />
+    <EditTextPreference
+            app:key="grid_height"
+            app:title="Height"
+            app:isPreferenceVisible="false" />
+    <EditTextPreference
+            app:key="snake_start_slowness"
+            app:title="Initial slowness"
+            app:defaultValue="250" />
+    <EditTextPreference
+            app:key="snake_min_slowness"
+            app:title="Minimum speed"
+            app:defaultValue="50" />
+    <EditTextPreference
+            app:key="snake_exp_factor"
+            app:title="Speed factor"
+            app:defaultValue="0.05" />
+
+</PreferenceScreen>
