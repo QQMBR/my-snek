@@ -2,19 +2,20 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context=".GameOverFragment">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".GameOverFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <TextView
+        <com.example.mysnek.HighlightTextView
             android:id="@+id/scoreView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/point_scored"
+            android:textSize="100sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.498"
@@ -23,18 +24,19 @@
             app:layout_constraintVertical_bias="0.325" />
 
         <com.google.android.flexbox.FlexboxLayout
-            android:layout_width="262dp"
-            android:layout_height="126dp"
-            app:justifyContent="space_evenly"
+            android:layout_width="340dp"
+            android:layout_height="wrap_content"
             app:alignContent="center"
             app:alignItems="center"
             app:flexWrap="nowrap"
+            app:justifyContent="space_evenly"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.496"
+            app:layout_constraintHorizontal_bias="0.492"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.818">
+            app:layout_constraintVertical_bias="0.84"
+            >
 
             <Button
                 android:id="@+id/replayButton"

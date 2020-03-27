@@ -5,7 +5,6 @@ import android.opengl.GLSurfaceView
 import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
-import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GestureDetectorCompat
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
@@ -28,20 +27,23 @@ class GameSurfaceView(context: Context, settings: SnekSettings = SnekSettings.de
         Log.d(TAG, "Setting up OpenGL SurfaceView")
         setEGLContextClientVersion(2)
 
-        renderer = {id: Int -> ResourcesCompat.getColor(resources, id, null)}.run {
-            GameRenderer(
-                EnumMap(mapOf(Pair(SnekColors.BACKGROUND,      this(R.color.colorBackground1)),
-                    Pair(SnekColors.HEAD,            this(R.color.colorHead1)),
-                    Pair(SnekColors.APPLE,           this(R.color.colorApple1)),
-                    Pair(SnekColors.BODY,            this(R.color.colorBody1)),
-                    Pair(SnekColors.GRID_BACKGROUND, this(R.color.colorGridBackground1))
-                )),
-                settings
-            )
-        }
+        val getColor = {id: Int -> context.themeColor(id)}
+
+        renderer = GameRenderer(
+            EnumMap(mapOf(
+                Pair(SnekColors.BACKGROUND,      getColor(R.attr.colorPrimary)),
+                Pair(SnekColors.HEAD,            getColor(R.attr.colorAccent)),
+                Pair(SnekColors.APPLE,           getColor(R.attr.color)),
+                Pair(SnekColors.BODY,            getColor(R.attr.colorSecondary)),
+                Pair(SnekColors.GRID_BACKGROUND, getColor(R.attr.colorPrimaryDark))
+            )),
+            settings
+        )
 
         setRenderer(renderer)
         Log.d(TAG, "Set renderer")
+
+        preserveEGLContextOnPause = true
     }
 
     //use the renderer thread to set the new coordinates of the box based on a
@@ -56,9 +58,8 @@ class GameSurfaceView(context: Context, settings: SnekSettings = SnekSettings.de
             renderer.renderAllSafe(coords, apple)
         }
     }
-    fun clearTiles() = queueEvent { renderer.clearTiles() }
 
-    fun pauseGame() = queueEvent { renderer.pauseSafe() }.also {Log.d(TAG, "Pausing the game")}
+    fun pauseGame() =  renderer.pauseSafe().also {Log.d(TAG, "Pausing the game")}
     fun resumeGame() = queueEvent { renderer.resumeSafe() }.also { Log.d(TAG, "Removing overlay") }
 
     //a gesture detector that can also be used to create a new Observable
@@ -66,7 +67,7 @@ class GameSurfaceView(context: Context, settings: SnekSettings = SnekSettings.de
     //with the determined direction of the fling
     private val gestureDetector = object
         : GestureDetector.SimpleOnGestureListener(),
-          ObservableOnSubscribe<GameModel.GameControl> {
+        ObservableOnSubscribe<GameModel.GameControl> {
 
         private var observableEmitter: ObservableEmitter<GameModel.GameControl>? = null
 
@@ -78,12 +79,13 @@ class GameSurfaceView(context: Context, settings: SnekSettings = SnekSettings.de
             Log.d(TAG, "Tapped at (${e?.x}, ${e?.y})")
 
             e?.apply {
-                queueEvent {
-                    //renderer checks for the pause button having been clicked,
-                    //if yes, we send signal to stop the game
-                    if (renderer.handleTap(x, y)) {
-                        observableEmitter?.onNext(GameModel.Flow.PAUSE)
-                    }
+                Log.d(TAG, "Queuing tap event")
+
+                //renderer checks for the pause button having been clicked,
+                //if yes, we send signal to stop the game
+                if (renderer.handleTap(x, y)) {
+                    Log.d(TAG, "onNext PAUSE")
+                    observableEmitter?.onNext(GameModel.Flow.PAUSE)
                 }
             }
 
@@ -131,6 +133,13 @@ class GameSurfaceView(context: Context, settings: SnekSettings = SnekSettings.de
         detector.onTouchEvent(event)
 
         return true
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+
+        Log.d(TAG, "Detached from window")
+        renderer.queueUntilCreated()
     }
 
     companion object {

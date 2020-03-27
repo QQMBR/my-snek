@@ -41,18 +41,14 @@ class GameViewModel(private val settings: SnekSettings) : ViewModel(),
         }
     }
 
-    fun clearNotHandled() {
-        liveEventData.value?.clear()
+    fun createGame() {
+        //clear all not handled events such as pause and game over
+        //liveEventData.value?.clear()
     }
 
-    /*
-    fun startGameIfOver() {
-        if (gameOver) {
-            //events.onNext(GameModel.Flow.START_GAME)
-            gameOver = false
-        }
+    fun pauseGame() {
+        events.onNext(GameModel.Flow.PAUSE)
     }
-     */
 
     override fun onComplete() {
         Log.d(TAG, "Man's done up in this")
@@ -68,8 +64,6 @@ class GameViewModel(private val settings: SnekSettings) : ViewModel(),
     }
 
     override fun onNext(game: SnekData) {
-        //firstGame = false
-
         Log.d(TAG, "onNext $game")
 
         if (game is Movable) {

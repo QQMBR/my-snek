@@ -45,17 +45,18 @@ class CompositeSquare(private vararg val squares: Pair<Square, FloatArray>, priv
             })
         }
 
-        //TODO single pass, more efficient (do you need to call min and max EVERY time?)
-        val min = hitboxes.map { it.min }.fold(hitboxes.first().min, {acc, pair ->
-            Pair(min(acc.first, pair.first), min(acc.second, pair.second))
-        })
 
-        val max = hitboxes.map { it.max }.fold(hitboxes.first().max, {acc, pair ->
-            Pair(max(acc.first, pair.first), max(acc.second, pair.second))
-        })
+        //TODO need to call min and max EVERY time?
+        val minMax = hitboxes.map { Pair(it.min, it.max) }.fold(
+            Pair(hitboxes.first().min, hitboxes.first().max)) { (min, max), pair ->
+            Pair(
+                Pair(min(min.first, pair.first.first), min(min.second, pair.first.second)),
+                Pair(max(max.first, pair.second.first), max(max.second, pair.second.second))
+            )
+        }
 
-        Log.d("CompositeSquare", "min: $min, max: $max")
-        hitbox = scaleHitbox(min, max)
+        Log.d("CompositeSquare", "min: ${minMax.first}, max: ${minMax.second}")
+        hitbox = scaleHitbox(minMax.first, minMax.second)
     }
 
     private fun scaleHitbox(min: Pair<Float, Float>, max: Pair<Float, Float>): Hitbox {

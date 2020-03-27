@@ -2,6 +2,8 @@
   <dictionary name="julian">
     <words>
       <w>coords</w>
+      <w>hitbox</w>
+      <w>hitboxes</w>
       <w>snek</w>
     </words>
   </dictionary>

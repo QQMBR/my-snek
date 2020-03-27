@@ -18,6 +18,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val startSlowness : EditTextPreference? = findPreference("snake_start_slowness")
         val minSlowness : EditTextPreference? = findPreference("snake_min_slowness")
         val expFactor : EditTextPreference? = findPreference("snake_exp_factor")
+        val switchThemePreference: SwitchPreferenceCompat? = findPreference("switch_theme")
 
         isGridPreference?.also {
             updateWidthHeight(gridWidthPreference, gridHeightPreference, it.isChecked)
@@ -51,6 +52,24 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 true
             }
         }
+
+        switchThemePreference?.apply {
+            setOnPreferenceChangeListener { preference, alternativePref ->
+                when (alternativePref) {
+                    is Boolean -> {
+                        if (alternativePref) {
+                            Log.d("Settings", "Using AppTheme")
+                        }
+                        else {
+                            Log.d("Settings", "Using StrongTheme")
+                        }
+                    }
+                }
+
+                true
+            }
+        }
+
     }
 
     private fun updateWidthHeight(widthPreference: EditTextPreference?, heightPreference: EditTextPreference?, square: Boolean) {

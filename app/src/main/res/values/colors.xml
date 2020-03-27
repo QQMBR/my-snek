@@ -1,18 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
-    <color name="colorBody">#26715e</color>
-    <color name="colorHead">#096747</color>
-    <color name="colorApple">#e13843</color>
-    <color name="colorBackground">#ff333333</color>
-    <color name="colorGridBackground">#262626</color>
-    <color name="colorGridBackground1">#282828</color>
-    <color name="colorBody1">#ffc24b</color>
-    <color name="colorHead1">#73cef4</color>
-    <color name="colorApple1">#f43753</color>
-    <color name="colorBackground1">#4c4c4c</color>
+    <color name="colorGridBackground">#282828</color>
+    <color name="colorBody">#ffc24b</color>
+    <color name="colorHead">#73cef4</color>
+    <color name="colorApple">#f43753</color>
+    <color name="colorBackground">#4c4c4c</color>
 
+    <color name="strongBackground">#37474f</color>
+    <color name="strongGridBackground">#102027</color>
+
+    <color name="strongHead">#087f23</color>
+    <color name="strongApple">#e91e63</color>
+    <color name="strongBody">#4caf50</color>
 
 </resources>

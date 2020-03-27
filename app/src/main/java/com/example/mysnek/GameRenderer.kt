@@ -6,6 +6,7 @@ import android.opengl.Matrix
 import android.util.Log
 import java.nio.IntBuffer
 import java.util.EnumMap
+import java.util.concurrent.Callable
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.properties.Delegates
@@ -15,7 +16,8 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>, settings: SnekS
 
     private var created = false
 
-    private var overlay: Square? = null
+    private var activeOverlay: Square? = null
+    private lateinit var overlay: Square
 
     private var screenPixelWidth by Delegates.notNull<Int>()
     private var screenPixelHeight by Delegates.notNull<Int>()
@@ -49,18 +51,20 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>, settings: SnekS
             })
     }
 
-    //the tiles for the apple and entire snake, constrained into a tile of the game grid
-    //lazy so that the initializing code is always called when there is already an
-    //OpenGL instance (assuming this was the issue causing nothing to be
-    //                 rendered after screen rotation)
-    //TODO does lazy fix all issues with screen turns?
-    private lateinit var apple: Lazy<Tile>
-    private val tiles: ArrayList<Lazy<Tile>> = arrayListOf()
+    private lateinit var apple: Tile
+    private var tiles: ArrayList<Tile> = arrayListOf()
 
     //necessary matrices used in the OpenGL pipeline
     private val mVPMatrix = FloatArray(16)
     private val projectionMatrix = FloatArray(16)
     private val viewMatrix = FloatArray(16)
+
+    /**
+     * the inverse of [projectionMatrix] * [viewMatrix]
+     * used to take pixel coordinates into world coordinates for checking
+     * hitbox collisions for e.g. the pause button
+     */
+    private var inverseVPMatrix = FloatArray(16)
 
     private val queuedEvents = ArrayList<() -> Unit>()
     //try to retrieve a color from the colors map and convert it to a RGBA FloatArray
@@ -69,18 +73,13 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>, settings: SnekS
             Log.e(TAG, "$color wasn't found in the colors map")
         }
 
-    private var cameraX = 0f
-    private var cameraY = 0f
-    private var deltaX = 0f
-    private var deltaY = 0f
-
     private val screenHeight = if (settings.gridWidth > settings.gridHeight) settings.gridHeight / settings.gridWidth.toFloat()
         else 1f
 
     private val screenWidth = if (settings.gridWidth > settings.gridHeight) 1f
         else settings.gridWidth / settings.gridHeight.toFloat()
 
-    private val backGroundScale = scaleFloatArray(sx = screenWidth, sy = screenHeight)
+    private val backgroundScale = scaleFloatArray(sx = screenWidth, sy = screenHeight)
 
     private fun queueIfNotCreated(f: () -> Unit) {
         //if onSurfaceCreated hasn't yet been called,
@@ -95,29 +94,42 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>, settings: SnekS
         }
     }
 
+    fun queueUntilCreated() {
+        created = false
+    }
+
+    /**
+     * @param x x coordinate of the tap in pixels from left
+     * @param y y coordinate of the tap in pixels from top
+     *
+     * starts a [Callable] to calculate the whether the tap
+     * is in the pause button's hitbox, if yes, then
+     * the pause overlay is set
+     *
+     * NOTE: this means that the overlay may be set twice,
+     *       once by this method and once via the owning
+     *       fragment that handles all pauses, including
+     *       ones that are due to lifecycle changes
+     *
+     * @return true if the pause button was hit,
+     * false if not or an error was thrown by the [Callable]
+     *
+     * can be called without queueEvent as it uses a [Callable]
+     */
     fun handleTap(x: Float, y: Float): Boolean {
-        return screenToWorld(mVPMatrix, screenPixelWidth, screenPixelHeight, x, y, 0f).let {
-            pauseButton.hitbox.checkCollision(it[0], it[1])
-        }
-    }
-
-    //TODO are these "safe" functions really safe? -> More testing
-    //these functions call their respective functions if onSurface
-    //has already been called, otherwise, they are added to
-    //a list of queued functions that are executed once the surface
-    //has been created
-    fun renderTilesSafe(coords: ArrayList<Coords>) {
-
-        Log.d(TAG, "Queuing if not created")
-        queueIfNotCreated {
-            Log.d(TAG, "Rendering ${coords.map {"$it"}}")
-            renderTiles(coords)
-        }
-    }
-
-    fun renderAppleSafe(coords: Coords) {
-        queueIfNotCreated {
-            renderApple(coords)
+        Log.d(TAG, "Calculating tap coordinates in the world coordinate space")
+        return try {
+            Callable {
+                screenToWorld(x, y).let {
+                    Log.d(TAG, "Checking for collision using calculated click value")
+                    pauseButton.hitbox.checkCollision(it[0], it[1])
+                }
+            }.call().also {
+                if (it) pause()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Callable on handleTap threw an exception ${e.message} ${e.stackTrace}")
+            false
         }
     }
 
@@ -136,139 +148,111 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>, settings: SnekS
 
     fun resumeSafe() {
         queueIfNotCreated {
-            resume()
+           resume()
         }
     }
 
     private fun resume() {
-        overlay = null
+        activeOverlay = null
     }
 
     private fun pause() {
         Log.d(TAG, "Setting an overlay")
-        //TODO why need to invert color
-        overlay = Square(floatArrayOf(0f, 0f, 0f, 0.4f))
+
+        activeOverlay = overlay
     }
 
-    //copy a list of coordinates over into the x and y
-    //coordinates of all tiles in the list
-    //TODO add efficiency improvement for when only the first and last tiles have been moved
-    //TODO handle case where there are more tiles than coordinates
+    /**
+     * @param coords the coordinates of the snake's body tiles
+     *
+     * updates the internal tiles to match [coords]
+     * and set the colors of the respective tiles accordingly
+     * TODO optimize with the knowledge that mostly only two body tiles change:
+     *  " the first (head) and the last one (as long as no apples are eaten)
+     */
     private fun renderTiles(coords: ArrayList<Coords>) {
-        if (tiles.size <= coords.size) {
-            with(tiles.iterator().withIndex()) {
-                forEach { (index, tile) ->
+        Log.d(TAG, "Calling renderTiles")
 
-                    //change the color of the head only
-                    if (index == 0) {
-                        tile.value.changeColor(getColor(SnekColors.HEAD))
-                    }
-
-                    tile.value.coords = coords[index]
-                }
+        //remove elements from tiles until the size matches that of coords'
+        with(tiles.iterator()) {
+            while (tiles.size > coords.size) {
+                next()
+                remove()
             }
+        }
 
-            with(coords.takeLast(coords.size - tiles.size).iterator().withIndex()) {
-                forEach { (index, pair) ->
-                    //Log.d(TAG, "Adding new tiles")
-
-                    //lazily create a new tile with the body color (or default if color isn't found)
-                    //so that the initializing code is called later
-                    @Suppress("ComplexRedundantLet")
-                    tiles.add(
-                        (if (tiles.size == 0 && index == 0) SnekColors.HEAD else SnekColors.BODY).let {
-                            lazy {
-                                Tile(grid, pair, getColor(it))
-                            }
-                        }
-                    )
+        with(tiles.iterator().withIndex()) {
+            forEach { (i, value) ->
+                if (i == 0) {
+                    value.changeColor(getColor(SnekColors.HEAD))
+                }
+                if (i < coords.size) {
+                    value.coords = coords[i]
                 }
             }
         }
-        else {
-            Log.d(TAG, "Tiles wasn't smaller than coords ${tiles.size} vs ${coords.size}")
+
+        if (tiles.size < coords.size) {
+
+            val colorHead = tiles.size == 0
+
+            tiles.addAll((coords.slice(tiles.size until coords.size)).mapIndexed { index, coords ->
+                Tile(grid, coords, getColor(SnekColors.BODY))
+            })
+
+            if (colorHead) {
+                with(tiles.iterator()) {
+                    if (hasNext()) {
+                        next().changeColor(getColor(SnekColors.HEAD))
+                    }
+                }
+            }
         }
     }
 
     private fun renderApple(coords: Coords) {
+        // TODO don't check for initialized every time, do this only once at the start of the game
         if (!::apple.isInitialized) {
-            apple = lazy {Tile(grid, coords, getColor(SnekColors.APPLE))}
+            apple = Tile(grid, coords, getColor(SnekColors.APPLE))
         }
         else {
-            apple.value.coords = coords
-        }
-    }
-
-    fun panCamera(direction: GameModel.Direction) {
-        queueIfNotCreated {
-            val panSpeed = 0.006f
-            when (direction) {
-                GameModel.Direction.LEFT -> {
-                    deltaX = -panSpeed
-                    deltaY = 0f
-                }
-                GameModel.Direction.RIGHT -> {
-                    deltaX = panSpeed
-                    deltaY = 0f
-                }
-                GameModel.Direction.UP -> {
-                    deltaX = 0f
-                    deltaY = panSpeed
-                }
-                GameModel.Direction.DOWN -> {
-                    deltaX = 0f
-                    deltaY = -panSpeed
-                }
-            }
+            apple.coords = coords
         }
     }
 
     override fun onDrawFrame(p0: GL10?) {
-        //cameraX += deltaX
-        //cameraY += deltaY
-
-        //set the camera position
-        Matrix.setLookAtM(viewMatrix, 0, cameraX, cameraY, 4f, 0f, 0f, 0f, 0f, 1f, 0f)
-
-        //calculate the projection and view transformation
-        Matrix.multiplyMM(mVPMatrix, 0, projectionMatrix, 0, viewMatrix, 0)
 
         //redraw background with color
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 
-
-        gridBackground.draw(mVPMatrix mul backGroundScale)
+        gridBackground.draw(mVPMatrix mul backgroundScale)
 
         //draw all of the tiles from the list
-        tiles.forEach { t -> t.value.draw(mVPMatrix) }
+        tiles.forEach { t -> t.draw(mVPMatrix) }
 
         if (::apple.isInitialized) {
-            apple.value.draw(mVPMatrix)
+            apple.draw(mVPMatrix)
         }
 
         //if there is an overlay, draw it
-        overlay?.draw(mVPMatrix mul backGroundScale)
+        activeOverlay?.draw(mVPMatrix mul backgroundScale)
 
         pauseButton.draw(mVPMatrix)
-    }
-
-    fun clearTiles() {
-        Log.d(TAG, "Queuing clear tiles")
-        queueIfNotCreated {
-            Log.d(TAG, "Clearing tiles")
-            tiles.clear()
-        }
     }
 
     override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {
         GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_ONE_MINUS_SRC_ALPHA, GLES20.GL_SRC_ALPHA)
 
-        //TODO unpack background color array into individual parameters for the background
-        GLES20.glClearColor(0.3f, 0.3f, 0.3f, 1.0f)
+        val backgroundColor = getColor(SnekColors.BACKGROUND)
+
+        GLES20.glClearColor(backgroundColor[0], backgroundColor[1], backgroundColor[2], backgroundColor[3])
 
         //initialize the square representing the background of the grid with the associated color
         gridBackground = Square(getColor(SnekColors.GRID_BACKGROUND))
+
+        //TODO why need to invert color
+        overlay = Square(floatArrayOf(0f, 0f, 0f, 0.4f))
 
         created = true
         Log.d(TAG, "Surface Created")
@@ -281,7 +265,14 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>, settings: SnekS
         Log.d(TAG, "New ratio = $ratio")
 
         Matrix.orthoM(projectionMatrix, 0, -ratio, ratio, -1f, 1f, 3f, 7f)
-        //Matrix.frustumM(projectionMatrix, 0, -ratio, ratio, -1f, 1f, 3f, 7f)
+
+        //set the camera position
+        Matrix.setLookAtM(viewMatrix, 0, 0f, 0f, 4f, 0f, 0f, 0f, 0f, 1f, 0f)
+
+        //calculate the projection and view transformation
+        Matrix.multiplyMM(mVPMatrix, 0, projectionMatrix, 0, viewMatrix, 0)
+
+        Matrix.invertM(inverseVPMatrix, 0, mVPMatrix, 0)
 
         screenPixelWidth = width
         screenPixelHeight = height
@@ -293,48 +284,51 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>, settings: SnekS
         }
     }
 
-    companion object {
-        val screenToWorld: (FloatArray, Int, Int, Float, Float, Float) -> FloatArray = {mvpMatrix, width, height, x, y, zCut ->
+    /**
+     * @param x the
+     * calculates the
+     */
+    private fun screenToWorld(x: Float, y: Float): FloatArray {
 
-            val xNDC = 2 * x / width - 1
-            val yNDC = -(2 * y / height - 1)
+        val xNDC = 2 * x / screenPixelWidth - 1
+        val yNDC = -(2 * y / screenPixelHeight - 1)
 
-            val nearNDC = floatArrayOf(xNDC, yNDC, -1f, 1f)
-            val farNDC = floatArrayOf(xNDC, yNDC, 1f, 1f)
+        val nearNDC = floatArrayOf(xNDC, yNDC, -1f, 1f)
+        val farNDC = floatArrayOf(xNDC, yNDC, 1f, 1f)
 
-            val inverseVP= FloatArray(16).also {
-                Matrix.invertM(it, 0, mvpMatrix, 0)
-            }
+        val nearVertexWorld = FloatArray(4)
+        val farVertexWorld = FloatArray(4)
 
-            val nearVertexWorld = FloatArray(4)
-            val farVertexWorld = FloatArray(4)
+        Log.d(TAG, "Before MM")
 
-            Matrix.multiplyMV(nearVertexWorld, 0, inverseVP, 0, nearNDC, 0)
-            Matrix.multiplyMV(farVertexWorld, 0, inverseVP, 0, farNDC, 0)
+        Matrix.multiplyMV(nearVertexWorld, 0, inverseVPMatrix, 0, nearNDC, 0)
+        Matrix.multiplyMV(farVertexWorld, 0, inverseVPMatrix, 0, farNDC, 0)
 
-            val rayStart = nearVertexWorld.map {
-                it / nearVertexWorld[3]
-            }.also { arr ->
-                Log.d(TAG, "Near point (in world space): ${arr.map { "$it, " }}")
-            }
-
-            //do perspective division on the far vertex while calculating the vector
-            //from the near to far vector
-            val startToEnd = farVertexWorld.zip(rayStart) { e, s ->
-                e / farVertexWorld[3] - s
-            }
-
-            //calculate the distance from the near vector to cutting the plane perpendicular
-            //to the z axis, intersect it at zCut
-            val distance = (zCut - rayStart[2]) / startToEnd[2]
-
-            //calculate the other coordinates at the distance just calculated from the near point
-            rayStart.zip(startToEnd) { s, v ->
-                s + distance * v
-            }.toFloatArray().also { arr ->
-                Log.d(TAG, "Intersected $zCut at ${arr.map { "$it" }}")
-            }
+        val rayStart = nearVertexWorld.map {
+            it / nearVertexWorld[3]
+        }.also { arr ->
+            Log.d(TAG, "Near point (in world space): ${arr.map { "$it, " }}")
         }
+
+        //do perspective division on the far vertex while calculating the vector
+        //from the near to far vector
+        val startToEnd = farVertexWorld.zip(rayStart) { e, s ->
+            e / farVertexWorld[3] - s
+        }
+
+        //calculate the distance from the near vector to cutting the plane perpendicular
+        //to the z axis, intersect it at zCut
+        val distance = (- rayStart[2]) / startToEnd[2]
+
+        //calculate the other coordinates at the distance just calculated from the near point
+        return rayStart.zip(startToEnd) { s, v ->
+            s + distance * v
+        }.toFloatArray().also { arr ->
+            Log.d(TAG, "Intersected z = 0 at ${arr.map { "$it" }}")
+        }
+    }
+
+    companion object {
 
         fun loadShader(type: Int, shaderCode: String): Int {
 

@@ -23,37 +23,34 @@ class GameFragment : Fragment() {
         )
     }
 
-    private val gameSurfaceView: GameSurfaceView by lazy {
-        GameSurfaceView(requireActivity(), settings)
-    }
+    private var gameSurfaceView : GameSurfaceView? = null
 
     private val viewModel by lazy {
+
         //create a ViewModel using the stream of directions from the SurfaceView
         //and settings from shared preferences
         getViewModel { GameViewModel(settings) }
     }
 
+    override fun onResume() {
+        super.onResume()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        gameSurfaceView?.onResume()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
-
-        //connect the ViewModel's subject to the input stream and signal
-        //that it may start emitting items
-        gameSurfaceView.screenStream.subscribe(viewModel.events)
-
-        //gameSurfaceView.resumeGame()
-
         lifecycle.addObserver(object : LifecycleObserver {
-
             @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
             fun pause() {
                 Log.d(TAG, "Paused from LifecycleObserver")
-                //viewModel.pauseGame()
-                viewModel.events.onNext(GameModel.Flow.PAUSE)
+                viewModel.pauseGame()
             }
         })
-
     }
 
     override fun onCreateView(
@@ -63,8 +60,9 @@ class GameFragment : Fragment() {
         Log.d(TAG, "Creating View")
 
         //TODO can we do better than this?
-        viewModel.clearNotHandled()
+        viewModel.createGame()
 
+        gameSurfaceView = GameSurfaceView(requireActivity(), settings)
         //only show the surfaceView
         return gameSurfaceView
     }
@@ -73,6 +71,10 @@ class GameFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
 
+        //connect the ViewModel's subject to the input stream and signal
+        //that it may start emitting items
+        gameSurfaceView?.screenStream?.subscribe(viewModel.events)
+
         //observe changes in the live data and send them for rendering the SurfaceView
         //or handle the end of the game
         viewModel.getGameData().observe(viewLifecycleOwner, Observer {
@@ -80,7 +82,7 @@ class GameFragment : Fragment() {
             when (it) {
                 is Update  -> {
                     //Log.d(TAG, "Updating tiles $it (${it.hashCode()}), ${it.coords.hashCode()}")
-                    gameSurfaceView.renderAll(it.coords, it.apple)
+                    gameSurfaceView?.renderAll(it.coords, it.apple)
                 }
             }
         })
@@ -88,23 +90,23 @@ class GameFragment : Fragment() {
         viewModel.liveEventData.observe(viewLifecycleOwner, EventObserver {
             //Log.d(TAG, "Observed in event $it")
             when (it) {
-                Pause2 -> gameSurfaceView.pauseGame()
-                Resume2 -> gameSurfaceView.resumeGame()
+                Pause2 -> gameSurfaceView?.pauseGame()
+                Resume2 -> gameSurfaceView?.resumeGame()
                 is GameOver2 -> gameOver(it.score)
             }
         })
-
-        gameSurfaceView.clearTiles()
     }
 
     //TODO properly handle game over
     private fun gameOver(score: Int) {
+
         //navigate to the game over destination fragment, safely passing the score
         findNavController().navigate(GameFragmentDirections.actionGameFragmentToGameOverFragment(score))
     }
 
     override fun onStop() {
         viewModel.getGameData().removeObservers(viewLifecycleOwner)
+        gameSurfaceView?.onPause()
 
         super.onStop()
     }

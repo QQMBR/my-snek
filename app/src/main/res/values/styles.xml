@@ -3,9 +3,65 @@
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat" >
         <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorSecondary">@color/colorBody</item>
+        <item name="colorAccent">@color/colorHead</item>
+
+        <item name="color">@color/colorApple</item>
+
+        <item name="colorPrimary">@color/colorBackground</item>
+        <item name="colorPrimaryDark">@color/colorGridBackground</item>
+
+        <item name="android:colorBackground">@color/colorBackground</item>
+        <item name="android:textColor">@color/colorBody</item>
+        <item name="android:colorPrimary">@color/colorBackground</item>
+        <item name="android:colorPrimaryDark">@color/colorGridBackground</item>
+
+        <item name="android:colorAccent">@color/colorHead</item>
+
+        <item name="android:buttonStyle">@style/AppTheme.Button</item>
+        <item name="highlightTextStyle">@style/AppTheme.HighlightText</item>
     </style>
 
+    <style name="AppTheme.Button" parent="Widget.AppCompat.Button" >
+        <item name="android:background">@drawable/round_button</item>
+        <item name="android:backgroundTint">@color/colorGridBackground</item>
+    </style>
+
+    <style name="TextAppearance.AppCompat.Big" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">100sp</item>
+    </style>
+
+    <style name="AppTheme.HighlightText" parent="TextAppearance.AppCompat.Big">
+        <item name="android:textColor">@color/colorApple</item>
+    </style>
+
+    <style name="StrongTheme" parent="Theme.AppCompat" >
+        <!-- Customize your theme here. -->
+        <item name="colorSecondary">@color/strongBody</item>
+        <item name="colorAccent">@color/strongHead</item>
+
+        <item name="color">@color/strongApple</item>
+
+        <item name="colorPrimary">@color/strongBackground</item>
+        <item name="colorPrimaryDark">@color/strongGridBackground</item>
+
+        <item name="android:colorPrimary">@color/strongBackground</item>
+        <item name="android:colorBackground">@color/strongBackground</item>
+        <item name="android:textColor">@color/strongBody</item>
+        <item name="android:colorPrimaryDark">@color/strongGridBackground</item>
+
+        <item name="android:colorAccent">@color/strongHead</item>
+
+        <item name="android:buttonStyle">@style/StrongTheme.Button</item>
+        <item name="highlightTextStyle">@style/StrongTheme.HighlightText</item>
+    </style>
+
+    <style name="StrongTheme.Button" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/round_button</item>
+        <item name="backgroundTint">@color/strongGridBackground</item>
+    </style>
+
+    <style name="StrongTheme.HighlightText" parent="TextAppearance.AppCompat.Big">
+        <item name="android:textColor">@color/strongApple</item>
+    </style>
 </resources>

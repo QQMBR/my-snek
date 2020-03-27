@@ -1,7 +1,10 @@
 package com.example.mysnek
 
+import android.content.Context
 import android.opengl.Matrix
 import android.text.TextUtils
+import android.util.TypedValue
+import androidx.annotation.AttrRes
 import androidx.lifecycle.Observer
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
@@ -134,4 +137,10 @@ class EventObserver<T>(private val onEventUnhandledContent: (T) -> Unit) : Obser
             onEventUnhandledContent(value)
         }
     }
+}
+
+fun Context.themeColor(@AttrRes attrRes: Int): Int {
+    val typedValue = TypedValue()
+    theme.resolveAttribute (attrRes, typedValue, true)
+    return typedValue.data
 }

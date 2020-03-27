@@ -26,5 +26,8 @@
             app:key="snake_exp_factor"
             app:title="Speed factor"
             app:defaultValue="0.05" />
-
+    <SwitchPreferenceCompat
+        app:key="switch_theme"
+        app:defaultValue="false"
+        app:title="Use alternative theme" />
 </PreferenceScreen>

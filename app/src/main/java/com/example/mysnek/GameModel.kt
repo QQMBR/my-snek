@@ -45,7 +45,12 @@ class GameModel(upstream: Observable<GameControl>, private val settings: SnekSet
                 when (newDir) {
                     Flow.PAUSE -> {
                         //no changes are made to the snake
-                        snake
+                        if (snake is Over) {
+                            processMove(snake)
+                        }
+                        else {
+                            snake
+                        }
                     }
                     /*
                     //turn any Move into an Apple containing the same information
@@ -132,11 +137,13 @@ class GameModel(upstream: Observable<GameControl>, private val settings: SnekSet
 
     init {
         snakeData
-            //.map { snek -> snek.body.size - settings.startSize}
-            .filter { snake -> snake is Apple}
-            .scan(0) {acc, _ -> acc + 1}
-            //.distinctUntilChanged()
-            //.skip(1)
+            .filter { snake -> snake is Apple || snake is Over}
+            .scan(0) { acc, snake ->
+                if (snake is Apple)
+                    acc + 1
+                else
+                    0
+            }
             .doOnNext { x -> Log.d(TAG, "New score = $x")}
             .subscribe(score)
     }
@@ -161,9 +168,8 @@ class GameModel(upstream: Observable<GameControl>, private val settings: SnekSet
                 is Movable  -> {
                     checkApple(snake)
                 }
-                //if the game is over, we simply restart the game, resetting the snake to the first apple
-                is Over     -> getFirstApple(settings.startSize, settings.gridWidth, settings.gridHeight)
-                //is Finished -> Finished
+                //if the game is over, restart the game by resetting the snake to the first apple
+                is Over -> getFirstApple(settings.startSize, settings.gridWidth, settings.gridHeight)
             }
         }
     }
