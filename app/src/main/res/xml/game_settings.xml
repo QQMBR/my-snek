@@ -16,12 +16,12 @@
             app:isPreferenceVisible="false" />
     <EditTextPreference
             app:key="snake_start_slowness"
-            app:title="Initial slowness"
-            app:defaultValue="250" />
+            app:title="Initial speed"
+            app:defaultValue="4" />
     <EditTextPreference
             app:key="snake_min_slowness"
-            app:title="Minimum speed"
-            app:defaultValue="50" />
+            app:title="Maximum speed"
+            app:defaultValue="20" />
     <EditTextPreference
             app:key="snake_exp_factor"
             app:title="Speed factor"

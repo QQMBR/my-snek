@@ -8,6 +8,7 @@
         tools:context=".StartFragment" >
 
     <com.google.android.flexbox.FlexboxLayout
+        android:id="@+id/flexboxLayout"
         android:layout_width="340dp"
         android:layout_height="wrap_content"
         app:alignContent="center"
@@ -25,13 +26,32 @@
             android:id="@+id/button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textAlignment="center"
             android:text="@string/start_game" />
 
         <Button
             android:id="@+id/button2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textAlignment="center"
             android:text="@string/settings" />
     </com.google.android.flexbox.FlexboxLayout>
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="263dp"
+        android:layout_height="321dp"
+        android:fontFamily="@font/quicksand"
+        android:lineSpacingExtra="6sp"
+        android:text="@string/intro_text"
+        android:textSize="14sp"
+        android:textStyle="italic"
+        android:textAlignment="center"
+        android:scrollbars="vertical"
+        app:layout_constraintBottom_toTopOf="@+id/flexboxLayout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.81" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

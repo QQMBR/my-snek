@@ -5,5 +5,11 @@
     <string name="replay_game">Replay</string>
     <string name="back_to_menu">Menu</string>
     <string name="settings">Settings</string>
+    <string name="intro_text">A simple game of snake with a few settings you can twiddle around with.
+        The game was implemented with RxJava2 handling the game logic and OpenGL ES2 to display
+        the game\'s state. The app uses many Android Jetpack components such as Navigation for a
+        single Activity design, ViewModel and LiveData to preserve state upon a device configuration
+        change as well as Preferences for, well… Preferences.
+    </string>
 
 </resources>

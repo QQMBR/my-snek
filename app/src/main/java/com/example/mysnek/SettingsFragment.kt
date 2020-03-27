@@ -35,8 +35,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
         setNumberInputSummary(startSizePreference) { x -> "Size: $x"}
         setNumberInputSummary(gridWidthPreference)
         setNumberInputSummary(gridHeightPreference)
-        setNumberInputSummary(startSlowness) { x -> "$x ms/move"}
-        setNumberInputSummary(minSlowness) { x -> "$x ms/move"}
+        setNumberInputSummary(startSlowness) { x -> "$x moves/s"}
+        setNumberInputSummary(minSlowness) { x -> "$x moves/s"}
 
         setFloatInputSummary(expFactor)
 
@@ -54,7 +54,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         switchThemePreference?.apply {
-            setOnPreferenceChangeListener { preference, alternativePref ->
+            setOnPreferenceChangeListener { _, alternativePref ->
                 when (alternativePref) {
                     is Boolean -> {
                         if (alternativePref) {

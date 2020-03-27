@@ -4,6 +4,7 @@
       <w>coords</w>
       <w>hitbox</w>
       <w>hitboxes</w>
+      <w>jetpack</w>
       <w>snek</w>
     </words>
   </dictionary>

@@ -32,18 +32,17 @@ class GameFragment : Fragment() {
         getViewModel { GameViewModel(settings) }
     }
 
-    override fun onResume() {
-        super.onResume()
-    }
-
     override fun onStart() {
         super.onStart()
+        Log.d(TAG, "OnStart")
+
         gameSurfaceView?.onResume()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        Log.d(TAG, "OnCreate")
         lifecycle.addObserver(object : LifecycleObserver {
             @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
             fun pause() {
@@ -57,8 +56,8 @@ class GameFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        Log.d(TAG, "Creating View")
 
+        Log.d(TAG, "OnCreateView")
         //TODO can we do better than this?
         viewModel.createGame()
 
@@ -70,14 +69,13 @@ class GameFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-
         //connect the ViewModel's subject to the input stream and signal
         //that it may start emitting items
         gameSurfaceView?.screenStream?.subscribe(viewModel.events)
 
         //observe changes in the live data and send them for rendering the SurfaceView
         //or handle the end of the game
-        viewModel.getGameData().observe(viewLifecycleOwner, Observer {
+        viewModel.liveGameData.observe(viewLifecycleOwner, Observer {
             //Log.d(TAG, "Observed $it (${it.hashCode()})")
             when (it) {
                 is Update  -> {
@@ -105,10 +103,35 @@ class GameFragment : Fragment() {
     }
 
     override fun onStop() {
-        viewModel.getGameData().removeObservers(viewLifecycleOwner)
         gameSurfaceView?.onPause()
 
+        Log.d(TAG, "OnStop")
+
         super.onStop()
+    }
+
+    override fun onPause() {
+
+        super.onPause()
+        Log.d(TAG, "OnPause")
+
+        //viewModel.liveEventData.removeObservers(viewLifecycleOwner)
+
+    }
+
+    override fun onResume() {
+        Log.d(TAG, "OnResume")
+
+
+        super.onResume()
+    }
+
+    override fun onDestroyView() {
+
+        viewModel.liveEventData.removeObservers(viewLifecycleOwner)
+        viewModel.liveGameData.removeObservers(viewLifecycleOwner)
+
+        super.onDestroyView()
     }
 
     companion object {

@@ -77,6 +77,7 @@ class GameModel(upstream: Observable<GameControl>, private val settings: SnekSet
     }
 
     private val score : BehaviorSubject<Int> = BehaviorSubject.createDefault(0)
+    private val moves : BehaviorSubject<Int> = BehaviorSubject.createDefault(0)
 
     //emit the snake's new travelling direction upon each user input
     private val inputIntervalParams : Observable<Triple<GameControl, Long, Long>> = upstream
@@ -146,6 +147,16 @@ class GameModel(upstream: Observable<GameControl>, private val settings: SnekSet
             }
             .doOnNext { x -> Log.d(TAG, "New score = $x")}
             .subscribe(score)
+
+        snakeData
+            .scan(0) { acc, snake ->
+                if (snake is Over)
+                    0
+                else
+                    acc + 1
+            }
+            .doOnNext { x -> Log.d(TAG, "New number of moves = $x") }
+            .subscribe(moves)
     }
 
     //move the tile by destructuring the coordinates of the tile

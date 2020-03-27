@@ -11,10 +11,7 @@ import io.reactivex.subjects.PublishSubject
 class GameViewModel(private val settings: SnekSettings) : ViewModel(),
     Observer<SnekData> {
 
-    private val liveGameData = MutableLiveData<SnekEvent>()
-
-    fun getGameData() = liveGameData
-
+    val liveGameData = MutableLiveData<SnekEvent>()
     val liveEventData = MutableLiveData<Event<SingleSnekEvent>>()
 
     private var isPaused = false

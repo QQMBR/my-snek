@@ -20,6 +20,7 @@
 
         <item name="android:buttonStyle">@style/AppTheme.Button</item>
         <item name="highlightTextStyle">@style/AppTheme.HighlightText</item>
+        <item name="fontFamily">@font/quicksand</item>
     </style>
 
     <style name="AppTheme.Button" parent="Widget.AppCompat.Button" >
@@ -54,6 +55,7 @@
 
         <item name="android:buttonStyle">@style/StrongTheme.Button</item>
         <item name="highlightTextStyle">@style/StrongTheme.HighlightText</item>
+        <item name="fontFamily">@font/quicksand</item>
     </style>
 
     <style name="StrongTheme.Button" parent="Widget.AppCompat.Button">
