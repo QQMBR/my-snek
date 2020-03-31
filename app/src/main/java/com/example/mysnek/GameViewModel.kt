@@ -15,11 +15,11 @@ class GameViewModel(private val settings: SnekSettings) : ViewModel(),
     val liveEventData = MutableLiveData<Event<SingleSnekEvent>>()
 
     private var isPaused = false
-    //private var gameOver = true
+    private var gameOver = true
 
     val events = PublishSubject.create<GameModel.GameControl>()
 
-    private val gameModel = GameModel(events, settings)
+    private val gameModel : GameModel
 
     private val disposable = events.subscribe {
         if (it == GameModel.Flow.PAUSE) {
@@ -32,18 +32,24 @@ class GameViewModel(private val settings: SnekSettings) : ViewModel(),
     init {
         Log.d(TAG, "Init GameView")
 
-        gameModel.snakeData.also {
+        gameModel = GameModel(events, settings)
+
+        gameModel.data.also {
             it.subscribe(this)
             it.connect()
         }
     }
 
-    fun createGame() {
-        //clear all not handled events such as pause and game over
-        //liveEventData.value?.clear()
+    fun startGame() {
+        if (gameOver) {
+            events.onNext(GameModel.Flow.START_GAME)
+            gameOver = false
+        }
     }
 
+
     fun pauseGame() {
+        Log.d(TAG, "Pausing game")
         events.onNext(GameModel.Flow.PAUSE)
     }
 
@@ -77,7 +83,7 @@ class GameViewModel(private val settings: SnekSettings) : ViewModel(),
     }
 
     private fun endGame(score: Int) {
-        //gameOver = true
+        gameOver = true
         Log.d(TAG, "Posting GameOver")
         liveEventData.postValue(Event(GameOver2(score)))
     }

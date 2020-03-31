@@ -6,8 +6,10 @@ import android.text.TextUtils
 import android.util.TypedValue
 import androidx.annotation.AttrRes
 import androidx.lifecycle.Observer
+import androidx.preference.DropDownPreference
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
+import io.reactivex.Observable
 import io.reactivex.functions.Predicate
 
 //get the opposite direction
@@ -95,6 +97,35 @@ fun setFloatInputSummary(preference: EditTextPreference?,
     setInputSummary(preference, notSet, notFloat, String::toFloatOrNull, float)
 }
 
+fun setAccelModeInputSummary(preference: DropDownPreference?,
+    notSet: String = "Not set",
+    notAccelMode: String = "Not a valid option",
+    accelMode: (SnekSettings.AccelerationMode) -> String = {x -> "$x"}) {
+    preference?.apply {
+        summaryProvider = Preference.SummaryProvider<DropDownPreference> { pref ->
+
+            if (pref.value != null) {
+                val value = SnekSettings.AccelerationMode.fromString(pref.value)
+
+                if (TextUtils.isEmpty(pref.value)) {
+                    notSet
+                }
+                else {
+                    if (value != null) {
+                        accelMode(value)
+                    }
+                    else {
+                        notAccelMode
+                    }
+                }
+            }
+            else {
+                notSet
+            }
+        }
+    }
+}
+
 fun <T> setInputSummary(preference: EditTextPreference?,
                         notSet: String,
                         notNumber: String,
@@ -143,4 +174,38 @@ fun Context.themeColor(@AttrRes attrRes: Int): Int {
     val typedValue = TypedValue()
     theme.resolveAttribute (attrRes, typedValue, true)
     return typedValue.data
+}
+
+fun String.toAccelMode() : SnekSettings.AccelerationMode? = SnekSettings.AccelerationMode.fromString(this)
+
+fun Observable<SnekData>.slownessFromSnake(settings: SnekSettings): Observable<Long>
+    = when (settings.snakeAccelMode) {
+    SnekSettings.AccelerationMode.NONE -> {
+        this
+            .map {
+                settings.initialSnakeSpeed
+            }
+    }
+    else -> {
+        this
+            .scan(0) { acc, snake ->
+                if (settings.snakeAccelMode == SnekSettings.AccelerationMode.APPLE) {
+                    when (snake) {
+                        is Over -> 0
+                        is Apple -> acc + 1
+                        else -> acc
+                    }
+                }
+                else {
+                    when (snake) {
+                        is Over -> 0
+                        is Apple -> acc / 2
+                        else -> acc + 1
+                    }
+                }
+            }
+            .map {
+                (1000f / settings.speedFromCounter(it)).toLong()
+            }
+    }
 }

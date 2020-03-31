@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorGridBackground">#282828</color>
-    <color name="colorBody">#ffc24b</color>
-    <color name="colorHead">#73cef4</color>
-    <color name="colorApple">#f43753</color>
-    <color name="colorBackground">#4c4c4c</color>
+    <color name="colorGridBackground">#c2c2c2</color>
+    <color name="colorBody">#52c7b8</color>
+    <color name="colorHead">#009688</color>
+    <color name="colorApple">#ff5722</color>
+    <color name="colorBackground">#e0e0e0</color>
 
     <color name="strongBackground">#37474f</color>
     <color name="strongGridBackground">#102027</color>

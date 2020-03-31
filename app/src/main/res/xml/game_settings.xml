@@ -1,31 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen
-        xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <EditTextPreference
-            app:key="start_size"
-            app:title="Starting size" />
+        app:key="start_size"
+        app:title="Starting size" />
     <SwitchPreferenceCompat
-            app:key="square_grid"
-            app:defaultValue="true"
-            app:title="Use a square grid" />
+        app:key="square_grid"
+        app:defaultValue="true"
+        app:title="Use a square grid" />
     <EditTextPreference
-            app:key="grid_width" />
+        app:key="grid_width" />
     <EditTextPreference
-            app:key="grid_height"
-            app:title="Height"
-            app:isPreferenceVisible="false" />
+        app:key="grid_height"
+        app:title="Height"
+        app:isPreferenceVisible="false" />
+    <DropDownPreference
+        app:key="accel_mode"
+        app:title="Acceleration mode"
+        app:entries="@array/accel_mode_prefs"
+        app:entryValues="@array/accel_mode_prefs"
+        app:defaultValue="Apple" />
     <EditTextPreference
-            app:key="snake_start_slowness"
-            app:title="Initial speed"
-            app:defaultValue="4" />
+        app:key="snake_start_slowness"
+        app:title="Initial speed"
+        app:defaultValue="4" />
     <EditTextPreference
-            app:key="snake_min_slowness"
-            app:title="Maximum speed"
-            app:defaultValue="20" />
+        app:key="snake_min_slowness"
+        app:title="Maximum speed"
+        app:defaultValue="20" />
     <EditTextPreference
-            app:key="snake_exp_factor"
-            app:title="Speed factor"
-            app:defaultValue="0.05" />
+        app:key="counts_to_max"
+        app:title="Counts to max. speed"
+        app:defaultValue="40" />
+    <EditTextPreference
+        app:key="accel_mode_each_slowdown"
+        app:title="Slowdown per apple"
+        app:defaultValue="15" />
     <SwitchPreferenceCompat
         app:key="switch_theme"
         app:defaultValue="false"

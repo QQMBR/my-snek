@@ -5,17 +5,24 @@ import io.reactivex.Observable
 import io.reactivex.functions.BiFunction
 import io.reactivex.functions.Predicate
 import io.reactivex.observables.ConnectableObservable
-import io.reactivex.rxkotlin.withLatestFrom
-import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.rxkotlin.Observables
+import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
-class GameModel(upstream: Observable<GameControl>, private val settings: SnekSettings) {
+class GameModel(gameControl: Observable<GameControl>, private val settings: SnekSettings) {
 
-    private fun slownessFromLength(length: Int) = settings.slownessFromLength(length)
+    private fun speedUp(acc: Int, snake: SnekData) : Int
+        = (when (snake) {
+        is Over -> 0
+        is Apple -> acc / 2
+        else -> acc + 1
+    }).run { this }
+
+    private val directionsQueue : MutableList<Direction> = mutableListOf()
 
     private val processGameData: BiFunction<SnekData, GameControl, SnekData>
-            = BiFunction { snake, newDir ->
+        = BiFunction { snake, newDir ->
         when (newDir) {
             is Direction -> {
                 //modify the snake's body
@@ -44,7 +51,6 @@ class GameModel(upstream: Observable<GameControl>, private val settings: SnekSet
             is Flow -> {
                 when (newDir) {
                     Flow.PAUSE -> {
-                        //no changes are made to the snake
                         if (snake is Over) {
                             processMove(snake)
                         }
@@ -52,21 +58,10 @@ class GameModel(upstream: Observable<GameControl>, private val settings: SnekSet
                             snake
                         }
                     }
-                    /*
-                    //turn any Move into an Apple containing the same information
-                    //the Apples state should be displayed though
-                    Flow.SHOW_APPLE -> {
-                        when (snake) {
-                            is Move -> Apple(snake.body, snake.apple)
-                            else    -> snake
-                        }
-                    }
-                    */
-                    //use the starting apple
-                    /*Flow.START_GAME -> {
+                    else -> {
+                        Log.d(TAG, "Starting game and getting new Move")
                         getFirstApple(settings.startSize, settings.gridWidth, settings.gridHeight)
                     }
-                     */
                 }
             }
             //only Flow and Direction implement interface, so this branch will never be reached
@@ -76,94 +71,121 @@ class GameModel(upstream: Observable<GameControl>, private val settings: SnekSet
         }
     }
 
-    private val score : BehaviorSubject<Int> = BehaviorSubject.createDefault(0)
-    private val moves : BehaviorSubject<Int> = BehaviorSubject.createDefault(0)
-
-    //emit the snake's new travelling direction upon each user input
-    private val inputIntervalParams : Observable<Triple<GameControl, Long, Long>> = upstream
-        .doOnNext { Log.d(TAG, "InputInterval: New upstream value $it") }
-        .onlyAllowedControls()
-        .withLatestFrom(score) { control: GameControl, latestScore: Int ->
-            Triple(control, 0L, slownessFromLength(latestScore))
+    private val upstream = gameControl
+        .filter { it == Flow.PAUSE || it == Flow.START_GAME}
+        .mergeWith(
+            gameControl
+                //.filter {it != Flow.PAUSE}
+                .ofType(Direction::class.java)
+                //TODO setting for starting direction
+                // " maybe randomize along with starting position
+                .scan(Direction.UP) { acc, cur ->
+                    if (acc == cur.flip()) {
+                        acc
+                    }
+                    else {
+                        cur
+                    }
+                }
+                .skip(1)
+                .distinctUntilChanged()
+        )
+        .distinctUntilChanged { last, current ->
+            last is Direction && current is Direction && last == current
         }
-        .doOnNext { Log.d(TAG, "InputInterval: New inputIntervalParams $it")}
-
-    //an observable that emits when the snake has a new score and needs to have
-    //it's speed recalculated so that it may move faster even when travelling
-    //in a straight line
-    private val gameIntervalParams : Observable<Triple<GameControl, Long, Long>> = score
-        .distinctUntilChanged()
-        .withLatestFrom(upstream) { score, latestDirection ->
-            Log.d(TAG, "GameInterval: Latest direction is: $latestDirection")
-            slownessFromLength(score).let { Triple(latestDirection, it, it) }
-        }
-        .filter { (gc, _, _) -> gc is Direction }
-        .doOnNext { Log.d(TAG, "GameInterval: New gameIntervalParams $it")}
-
-    private fun intervalFromDir(dir: Direction, initialDelay: Long, interval: Long) =
-        Observable.interval(initialDelay, interval, TimeUnit.MILLISECONDS)
-            .map { dir }
-            .doOnNext { Log.d(TAG, "Slowness = $interval, direction = $dir") }
-
-    //start the interval that moves the snake along
-    //at a certain speed without user input
-    private val slowness : Observable<GameControl> = Observable
-        .merge(gameIntervalParams, inputIntervalParams)
-        .switchMap { (dir, initialDelay, interval) ->
-            when (dir) {
-                is Direction -> intervalFromDir(dir, initialDelay, interval)
-                else -> Observable.just(dir)
-            }
-        }
-        .doOnNext { Log.d(TAG, "New slowness $it") }
-
-    private fun Observable<GameControl>.onlyAllowedControls() : Observable<GameControl> =
-        this.distinctUntilChanged { last, current ->
-            if (last is Direction && current is Direction) {
-                last == current || current == last.flip()
-            }
-            //otherwise let everything through - a flow is always distinct from a direction
-            //and all flows should be let through
-            else false
-        }
-
-    val snakeData : ConnectableObservable<SnekData> = slowness
-        .scan(getFirstApple(settings.startSize, settings.gridWidth, settings.gridHeight),
-            processGameData)
-        .distinctUntilChanged()
-        .doOnNext { otherSnake ->
-            Log.d(TAG, "New snake data = $otherSnake")
-        }
+        .doOnNext { Log.d(TAG, "Taken $it") }
         .publish()
 
-    init {
-        snakeData
-            .filter { snake -> snake is Apple || snake is Over}
-            .scan(0) { acc, snake ->
-                if (snake is Apple)
-                    acc + 1
-                else
-                    0
-            }
-            .doOnNext { x -> Log.d(TAG, "New score = $x")}
-            .subscribe(score)
+    private val heartbeat : PublishSubject<Unit> = PublishSubject.create()
 
-        snakeData
-            .scan(0) { acc, snake ->
-                if (snake is Over)
-                    0
-                else
-                    acc + 1
+    private val queueSubject = PublishSubject.create<QueueOperation>()
+    /**
+     * on each heartbeat, takes the next value from [directionsQueue] or, if the
+     * queue is empty, [upstream]
+     * and applies [processGameData] to calculate the next state of the game
+     */
+    val data : ConnectableObservable<SnekData> = queueSubject
+        .scan(Pair(mutableListOf<GameControl>(), Flow.START_GAME as GameControl?)) { acc, op ->
+            op.handle(acc)
+        }
+        //.doOnNext { Log.d(TAG, "Senseless $it") }
+        .filter { (_, res) -> res != null}
+        .map { (_, res) -> res!!}
+        // filter out any Pauses as they are handled by the heartbeat
+        .filter { it != Flow.PAUSE }
+        // filter out multiple start games after a heartbeat was established
+        .distinctUntilChanged { last, current ->
+            last == Flow.START_GAME && last == current
+        }
+        .scan(Move(arrayListOf(), Coords(0, 0)), processGameData)
+        .skip(1)
+        .doOnNext { Log.d(TAG, "Data ${it.javaClass.simpleName}") }
+        .publish()
+
+    interface QueueOperation {
+        fun handle(acc: Pair<MutableList<GameControl>, GameControl?>) : Pair<MutableList<GameControl>, GameControl?>
+    }
+
+    class QueueWrite(private val toWrite: GameControl) : QueueOperation {
+        override fun handle(acc: Pair<MutableList<GameControl>, GameControl?>): Pair<MutableList<GameControl>, GameControl?> {
+            return Pair(acc.first.apply { add(toWrite) }, null)
+        }
+    }
+
+    class QueueRead : QueueOperation {
+        override fun handle(acc: Pair<MutableList<GameControl>, GameControl?>): Pair<MutableList<GameControl>, GameControl?> {
+            return if (acc.first.size > 0) {
+                val first = acc.first.removeAt(0)
+
+                Pair(acc.first, first)
+            } else {
+                acc
             }
-            .doOnNext { x -> Log.d(TAG, "New number of moves = $x") }
-            .subscribe(moves)
+        }
+    }
+
+
+    init {
+
+        heartbeat
+            .map {
+                Log.d(TAG, "Reading")
+                QueueRead()
+            }
+            .subscribe(queueSubject)
+
+        upstream
+            .map {
+                Log.d(TAG, "Writing $it")
+                QueueWrite(it)
+            }
+            .subscribe(queueSubject)
+
+        Observables.combineLatest(
+            data,
+            upstream.distinctUntilChanged { last, _ ->
+                !(last == Flow.PAUSE || last == Flow.START_GAME)
+            }
+                .doOnNext { Log.d(TAG, "Restart after Pause or StartGame") }
+        )
+            .map { (snake, _) -> snake }
+            .slownessFromSnake(settings)
+            .switchMap { slowness ->
+                Observable
+                    .timer(slowness, TimeUnit.MILLISECONDS)
+                    .map { Unit }
+            }
+            .doOnNext { Log.d(TAG, "Heartbeat") }
+            .subscribe(heartbeat)
+
+        upstream.connect()
     }
 
     //move the tile by destructuring the coordinates of the tile
     //and the vectorized direction and adding the components
     //of the vector to the coordinates
     private val moveHead
-            = { (x, y): Coords, dir: Direction ->
+        = { (x, y): Coords, dir: Direction ->
         { (dx, dy): Coords ->
             Coords(x + dx, y + dy)
         } (dir.vectorize())
@@ -179,8 +201,9 @@ class GameModel(upstream: Observable<GameControl>, private val settings: SnekSet
                 is Movable  -> {
                     checkApple(snake)
                 }
+                else -> snake
                 //if the game is over, restart the game by resetting the snake to the first apple
-                is Over -> getFirstApple(settings.startSize, settings.gridWidth, settings.gridHeight)
+                //is Over -> getFirstApple(settings.startSize, settings.gridWidth, settings.gridHeight)
             }
         }
     }
@@ -223,7 +246,7 @@ class GameModel(upstream: Observable<GameControl>, private val settings: SnekSet
 
     //simple enum for all the directions the snake can move in
     enum class Direction : GameControl { UP, DOWN, LEFT, RIGHT }
-    enum class Flow : GameControl { PAUSE, /* SHOW_APPLE, START_GAME*/ }
+    enum class Flow : GameControl { PAUSE, /* SHOW_APPLE, */ START_GAME }
 
     companion object {
         const val TAG = "GameModel"
@@ -231,12 +254,12 @@ class GameModel(upstream: Observable<GameControl>, private val settings: SnekSet
         //snake starts vertically in length with a random apple
         //position (but not in the snake) and with 0 points
         fun getFirstApple(startSize: Int, width: Int, height: Int) : Move
-                = Move(
-                    body = ArrayList((0 until startSize ).map { Coords(0, it) }),
-                    apple = Coords(
-                    Random.nextInt(1, width),
-                    Random.nextInt(startSize, height)
-                    )
-                )
+            = Move(
+            body = ArrayList((0 until startSize ).map { Coords(0, it) }),
+            apple = Coords(
+                Random.nextInt(1, width),
+                Random.nextInt(startSize, height)
+            )
+        )
     }
 }

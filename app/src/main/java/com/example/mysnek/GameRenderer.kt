@@ -173,37 +173,39 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>, settings: SnekS
     private fun renderTiles(coords: ArrayList<Coords>) {
         Log.d(TAG, "Calling renderTiles")
 
-        //remove elements from tiles until the size matches that of coords'
-        with(tiles.iterator()) {
-            while (tiles.size > coords.size) {
-                next()
-                remove()
-            }
-        }
-
-        with(tiles.iterator().withIndex()) {
-            forEach { (i, value) ->
-                if (i == 0) {
-                    value.changeColor(getColor(SnekColors.HEAD))
-                }
-                if (i < coords.size) {
-                    value.coords = coords[i]
+        synchronized(tiles) {
+            //remove elements from tiles until the size matches that of coords'
+            with(tiles.iterator()) {
+                while (tiles.size > coords.size) {
+                    next()
+                    remove()
                 }
             }
-        }
 
-        if (tiles.size < coords.size) {
+            with(tiles.iterator().withIndex()) {
+                forEach { (i, value) ->
+                    if (i == 0) {
+                        value.changeColor(getColor(SnekColors.HEAD))
+                    }
+                    if (i < coords.size) {
+                        value.coords = coords[i]
+                    }
+                }
+            }
 
-            val colorHead = tiles.size == 0
+            if (tiles.size < coords.size) {
 
-            tiles.addAll((coords.slice(tiles.size until coords.size)).mapIndexed { index, coords ->
-                Tile(grid, coords, getColor(SnekColors.BODY))
-            })
+                val colorHead = tiles.size == 0
 
-            if (colorHead) {
-                with(tiles.iterator()) {
-                    if (hasNext()) {
-                        next().changeColor(getColor(SnekColors.HEAD))
+                tiles.addAll((coords.slice(tiles.size until coords.size)).map { coords ->
+                    Tile(grid, coords, getColor(SnekColors.BODY))
+                })
+
+                if (colorHead) {
+                    with(tiles.iterator()) {
+                        if (hasNext()) {
+                            next().changeColor(getColor(SnekColors.HEAD))
+                        }
                     }
                 }
             }

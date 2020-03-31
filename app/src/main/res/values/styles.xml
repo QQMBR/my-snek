@@ -1,18 +1,19 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat" >
+    <style name="AppTheme" parent="Theme.AppCompat.Light" >
         <!-- Customize your theme here. -->
         <item name="colorSecondary">@color/colorBody</item>
         <item name="colorAccent">@color/colorHead</item>
 
         <item name="color">@color/colorApple</item>
 
-        <item name="colorPrimary">@color/colorBackground</item>
-        <item name="colorPrimaryDark">@color/colorGridBackground</item>
+        <item name="colorPrimary">@color/colorGridBackground</item>
+
+        <item name="colorPrimaryDark">@color/colorBackground</item>
 
         <item name="android:colorBackground">@color/colorBackground</item>
-        <item name="android:textColor">@color/colorBody</item>
+        <item name="android:textColor">@color/colorApple</item>
         <item name="android:colorPrimary">@color/colorBackground</item>
         <item name="android:colorPrimaryDark">@color/colorGridBackground</item>
 
@@ -48,7 +49,7 @@
 
         <item name="android:colorPrimary">@color/strongBackground</item>
         <item name="android:colorBackground">@color/strongBackground</item>
-        <item name="android:textColor">@color/strongBody</item>
+        <item name="android:textColor">@color/strongHead</item>
         <item name="android:colorPrimaryDark">@color/strongGridBackground</item>
 
         <item name="android:colorAccent">@color/strongHead</item>

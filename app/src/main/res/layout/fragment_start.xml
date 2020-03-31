@@ -41,7 +41,6 @@
         android:id="@+id/textView"
         android:layout_width="263dp"
         android:layout_height="321dp"
-        android:fontFamily="@font/quicksand"
         android:lineSpacingExtra="6sp"
         android:text="@string/intro_text"
         android:textSize="14sp"

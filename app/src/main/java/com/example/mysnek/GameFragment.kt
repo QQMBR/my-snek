@@ -58,8 +58,6 @@ class GameFragment : Fragment() {
     ): View? {
 
         Log.d(TAG, "OnCreateView")
-        //TODO can we do better than this?
-        viewModel.createGame()
 
         gameSurfaceView = GameSurfaceView(requireActivity(), settings)
         //only show the surfaceView
@@ -122,6 +120,8 @@ class GameFragment : Fragment() {
     override fun onResume() {
         Log.d(TAG, "OnResume")
 
+        //TODO can we do better than this?
+        viewModel.startGame()
 
         super.onResume()
     }
