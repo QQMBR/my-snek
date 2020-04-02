@@ -6,10 +6,18 @@
     <string name="back_to_menu">Menu</string>
     <string name="settings">Settings</string>
     <string name="intro_text">A simple game of snake with a few settings you can twiddle around with.
-        The game was implemented with RxJava2 handling the game logic and OpenGL ES2 to display
-        the game\'s state. The app uses many Android Jetpack components such as Navigation for a
+        The game was implemented with RxJava2 handling the game logic and OpenGL ES 2.0 to display
+        the game\'s state. The game\'s design, especially for the colors, orients itself on
+        Google\'s Material Design guidelines, for example for legibility and button design.
+        The app also uses many Android Jetpack components such as Navigation for a
         single Activity design, ViewModel and LiveData to preserve state upon a device configuration
-        change as well as Preferences for, well… Preferences.
+        change (such as a rotation) as well as Preferences for, well… Preferences.
+
+        \n\n
+        P.S. If you find any bugs, crashes, etc., don\'t be surprised! :P
     </string>
+    <string name="dialog_invalid_settings">Invalid settings</string>
+    <string name="dialog_invalid_settings_play">Use default settings</string>
+    <string name="dialog_invalid_settings_back">Menu</string>
 
 </resources>

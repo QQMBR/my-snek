@@ -5,6 +5,7 @@ import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import android.util.Log
 import java.nio.IntBuffer
+import java.util.Collections
 import java.util.EnumMap
 import java.util.concurrent.Callable
 import javax.microedition.khronos.egl.EGLConfig
@@ -66,7 +67,8 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>, settings: SnekS
      */
     private var inverseVPMatrix = FloatArray(16)
 
-    private val queuedEvents = ArrayList<() -> Unit>()
+    private val queuedEvents = Collections.synchronizedList(ArrayList<() -> Unit>())
+
     //try to retrieve a color from the colors map and convert it to a RGBA FloatArray
     private fun getColor(color: SnekColors) = colors[color]?.colorToRGBAFloatArray()
         ?: DEFAULT_COLOR.also {
@@ -86,7 +88,7 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>, settings: SnekS
         //we queue the events to be ran upon creation
         //otherwise, we may run the function now
         if (!created) {
-            Log.d(TAG, "Queuing some event at ${queuedEvents.size}")
+            Log.d(TAG, "Queuing some event at ${queuedEvents.size}, hashCode: ${f.hashCode()}, thread: ${Thread.currentThread()}")
             queuedEvents.add(f)
         }
         else {
@@ -134,6 +136,7 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>, settings: SnekS
     }
 
     fun renderAllSafe(coords: ArrayList<Coords>, apple: Coords) {
+        Log.d(TAG, "Attempting to queue all")
         queueIfNotCreated {
             renderTiles(coords)
             renderApple(apple)
@@ -254,7 +257,7 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>, settings: SnekS
         gridBackground = Square(getColor(SnekColors.GRID_BACKGROUND))
 
         //TODO why need to invert color
-        overlay = Square(floatArrayOf(0f, 0f, 0f, 0.4f))
+        overlay = Square(floatArrayOf(0f, 0f, 0f, 0.8f))
 
         created = true
         Log.d(TAG, "Surface Created")
@@ -266,10 +269,43 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>, settings: SnekS
         val ratio = width.toFloat() / height.toFloat()
         Log.d(TAG, "New ratio = $ratio")
 
-        Matrix.orthoM(projectionMatrix, 0, -ratio, ratio, -1f, 1f, 3f, 7f)
+        //TODO okay for all aspect ratios?
+        //Matrix.perspectiveM(projectionMatrix, 0, 90f, ratio, 1f, 4f)
 
-        //set the camera position
-        Matrix.setLookAtM(viewMatrix, 0, 0f, 0f, 4f, 0f, 0f, 0f, 0f, 1f, 0f)
+        // otherwise try these, w/ fine tuning on the factor
+        //val factor = 1f / (ratio + 0.25f)
+        //Matrix.orthoM(projectionMatrix, 0, -ratio*factor, ratio*factor, -1f*factor, factor, 1f, 4f)
+
+        val factor = if (ratio > 1) ratio else 1f / (ratio)
+
+        if (ratio < 1) {
+            Matrix.orthoM(
+                projectionMatrix,
+                0,
+                -0.65f,
+                0.65f,
+                -factor * 0.65f,
+                factor * 0.65f,
+                1f,
+                4f
+            )
+        }
+        else {
+            Matrix.orthoM(
+                projectionMatrix,
+                0,
+                -0.8f * factor,
+                0.8f * factor,
+                -0.8f,
+                0.8f,
+                1f,
+                4f
+            )
+
+        }
+
+        // set the camera position - same for all aspect ratios
+        Matrix.setLookAtM(viewMatrix, 0, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1f, 0f)
 
         //calculate the projection and view transformation
         Matrix.multiplyMM(mVPMatrix, 0, projectionMatrix, 0, viewMatrix, 0)
@@ -280,8 +316,9 @@ class GameRenderer(private val colors: EnumMap<SnekColors, Int>, settings: SnekS
         screenPixelHeight = height
 
         //run each event that was queued before this surface was created
+        //TODO look up what synchronized list actually does
         queuedEvents.forEach {
-            Log.d(TAG, "Executing events")
+            Log.d(TAG, "Executing event ${it.hashCode()}")
             it()
         }
     }

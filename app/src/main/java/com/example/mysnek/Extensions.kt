@@ -86,15 +86,19 @@ fun setInputType(preference: EditTextPreference?, type: Int) {
 fun setNumberInputSummary(preference: EditTextPreference?,
     notSet: String = "Not set",
     notNumber: String = "Not a valid number",
+    notAllowed: String ="Value not allowed",
+    valueIsAllowed: (Int) -> Boolean = {true},
     number: (Int) -> String = { x -> "Value: $x" } ) {
-    setInputSummary(preference, notSet, notNumber, String::toIntOrNull, number)
+    setInputSummary(preference, notSet, notNumber, notAllowed, valueIsAllowed, String::toIntOrNull, number)
 }
 
 fun setFloatInputSummary(preference: EditTextPreference?,
-                         notSet: String = "Not set",
-                         notFloat: String = "Not a valid decimal number",
-                         float: (Float) -> String = {x -> "Value: $x"}) {
-    setInputSummary(preference, notSet, notFloat, String::toFloatOrNull, float)
+    notSet: String = "Not set",
+    notFloat: String = "Not a valid decimal number",
+    notAllowed: String = "Value not allowed",
+    valueIsAllowed: (Float) -> Boolean = {true},
+    float: (Float) -> String = {x -> "Value: $x"}) {
+    setInputSummary(preference, notSet, notFloat, notAllowed, valueIsAllowed, String::toFloatOrNull, float)
 }
 
 fun setAccelModeInputSummary(preference: DropDownPreference?,
@@ -127,10 +131,13 @@ fun setAccelModeInputSummary(preference: DropDownPreference?,
 }
 
 fun <T> setInputSummary(preference: EditTextPreference?,
-                        notSet: String,
-                        notNumber: String,
-                        conversion: (String) -> T?,
-                        number: (T) -> String) {
+    notSet: String,
+    notOfType: String,
+    notAllowed: String,
+    isValueAllowed: (T) -> Boolean,
+    conversion: (String) -> T?,
+    number: (value: T) -> String) {
+
     preference?.apply {
         summaryProvider = Preference.SummaryProvider<EditTextPreference> { pref ->
 
@@ -142,10 +149,15 @@ fun <T> setInputSummary(preference: EditTextPreference?,
                 }
                 else {
                     if (value != null) {
-                        number(value)
+                        if (isValueAllowed(value)) {
+                            number(value)
+                        }
+                        else {
+                            notAllowed
+                        }
                     }
                     else {
-                        notNumber
+                        notOfType
                     }
                 }
             }
@@ -155,6 +167,7 @@ fun <T> setInputSummary(preference: EditTextPreference?,
         }
     }
 }
+
 
 /**
  * An [Observer] for [Event]s, simplifying the pattern of checking if the [Event]'s content has
@@ -170,6 +183,15 @@ class EventObserver<T>(private val onEventUnhandledContent: (T) -> Unit) : Obser
     }
 }
 
+fun Int.toDirection(): GameModel.Direction
+    = when (this) {
+        0 -> GameModel.Direction.UP
+        1 -> GameModel.Direction.DOWN
+        2 -> GameModel.Direction.LEFT
+        3 -> GameModel.Direction.RIGHT
+        else -> GameModel.Direction.UP
+    }
+
 fun Context.themeColor(@AttrRes attrRes: Int): Int {
     val typedValue = TypedValue()
     theme.resolveAttribute (attrRes, typedValue, true)
@@ -179,33 +201,4 @@ fun Context.themeColor(@AttrRes attrRes: Int): Int {
 fun String.toAccelMode() : SnekSettings.AccelerationMode? = SnekSettings.AccelerationMode.fromString(this)
 
 fun Observable<SnekData>.slownessFromSnake(settings: SnekSettings): Observable<Long>
-    = when (settings.snakeAccelMode) {
-    SnekSettings.AccelerationMode.NONE -> {
-        this
-            .map {
-                settings.initialSnakeSpeed
-            }
-    }
-    else -> {
-        this
-            .scan(0) { acc, snake ->
-                if (settings.snakeAccelMode == SnekSettings.AccelerationMode.APPLE) {
-                    when (snake) {
-                        is Over -> 0
-                        is Apple -> acc + 1
-                        else -> acc
-                    }
-                }
-                else {
-                    when (snake) {
-                        is Over -> 0
-                        is Apple -> acc / 2
-                        else -> acc + 1
-                    }
-                }
-            }
-            .map {
-                (1000f / settings.speedFromCounter(it)).toLong()
-            }
-    }
-}
+    = settings.slownessFromSnake(this)

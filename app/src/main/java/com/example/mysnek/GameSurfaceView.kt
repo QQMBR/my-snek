@@ -31,11 +31,11 @@ class GameSurfaceView(context: Context, settings: SnekSettings = SnekSettings.de
 
         renderer = GameRenderer(
             EnumMap(mapOf(
-                Pair(SnekColors.BACKGROUND,      getColor(R.attr.colorPrimary)),
-                Pair(SnekColors.HEAD,            getColor(R.attr.colorAccent)),
-                Pair(SnekColors.APPLE,           getColor(R.attr.color)),
-                Pair(SnekColors.BODY,            getColor(R.attr.colorSecondary)),
-                Pair(SnekColors.GRID_BACKGROUND, getColor(R.attr.colorPrimaryDark))
+                Pair(SnekColors.BACKGROUND,      getColor(android.R.attr.colorBackground)),
+                Pair(SnekColors.HEAD,            getColor(R.attr.colorPrimary)),
+                Pair(SnekColors.APPLE,           getColor(R.attr.colorSecondary)),
+                Pair(SnekColors.BODY,            getColor(R.attr.colorPrimaryVariant)),
+                Pair(SnekColors.GRID_BACKGROUND, getColor(R.attr.colorSurface))
             )),
             settings
         )

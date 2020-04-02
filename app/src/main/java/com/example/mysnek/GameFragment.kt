@@ -15,13 +15,7 @@ import androidx.preference.PreferenceManager
 
 class GameFragment : Fragment() {
 
-    private val settings : SnekSettings by lazy {
-        SnekSettings.fromSharedPreferences(
-            PreferenceManager.getDefaultSharedPreferences(
-                requireActivity()
-            )
-        )
-    }
+    private lateinit var settings : SnekSettings
 
     private var gameSurfaceView : GameSurfaceView? = null
 
@@ -50,6 +44,12 @@ class GameFragment : Fragment() {
                 viewModel.pauseGame()
             }
         })
+
+        settings = SnekSettings.fromSharedPreferences(
+            PreferenceManager.getDefaultSharedPreferences(
+                requireActivity()
+            )
+        )
     }
 
     override fun onCreateView(
@@ -61,6 +61,7 @@ class GameFragment : Fragment() {
 
         gameSurfaceView = GameSurfaceView(requireActivity(), settings)
         //only show the surfaceView
+
         return gameSurfaceView
     }
 
@@ -86,9 +87,9 @@ class GameFragment : Fragment() {
         viewModel.liveEventData.observe(viewLifecycleOwner, EventObserver {
             //Log.d(TAG, "Observed in event $it")
             when (it) {
-                Pause2 -> gameSurfaceView?.pauseGame()
-                Resume2 -> gameSurfaceView?.resumeGame()
-                is GameOver2 -> gameOver(it.score)
+                Pause -> gameSurfaceView?.pauseGame()
+                Resume -> gameSurfaceView?.resumeGame()
+                is GameOver -> gameOver(it.score)
             }
         })
     }
@@ -112,9 +113,6 @@ class GameFragment : Fragment() {
 
         super.onPause()
         Log.d(TAG, "OnPause")
-
-        //viewModel.liveEventData.removeObservers(viewLifecycleOwner)
-
     }
 
     override fun onResume() {
@@ -127,7 +125,6 @@ class GameFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-
         viewModel.liveEventData.removeObservers(viewLifecycleOwner)
         viewModel.liveGameData.removeObservers(viewLifecycleOwner)
 
@@ -135,6 +132,8 @@ class GameFragment : Fragment() {
     }
 
     companion object {
+
+
         const val TAG = "GameFragment"
     }
 }

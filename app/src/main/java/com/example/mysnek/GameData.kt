@@ -11,13 +11,14 @@ sealed class SnekData(val body: ArrayList<Coords>) {
         return "SnekData = $body"
     }
 }
+
 sealed class Movable(body: ArrayList<Coords>, val apple: Coords) : SnekData(body) {
     override fun toString(): String {
         return super.toString().plus(", $apple")
     }
 }
 
-class Apple(body:  ArrayList<Coords>,
+class Grow (body:  ArrayList<Coords>,
             apple: Coords) : Movable(body, apple) {
     override fun toString(): String {
         return super.toString().plus(" (Apple)")
@@ -29,20 +30,17 @@ class Move (body:  ArrayList<Coords>,
         return super.toString().plus(" (Move)")
     }
 }
+class Start (body: ArrayList<Coords>, apple: Coords, val facing: GameModel.Direction): Movable(body, apple) {
+    override fun toString(): String {
+        return super.toString().plus( " (Start)")
+    }
+}
 
 class Over(body: ArrayList<Coords>) : SnekData(body) {
     override fun toString(): String {
         return super.toString().plus("(Over)")
     }
 }
-
-/*
-object Finished : SnekData(arrayListOf()) {
-    override fun toString(): String {
-        return "Finished"
-    }
-}
- */
 
 class BaseViewModelFactory<T>(val creator: () -> T) : ViewModelProvider.Factory {
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {

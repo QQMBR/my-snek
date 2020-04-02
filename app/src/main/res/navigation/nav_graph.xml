@@ -16,6 +16,9 @@
         <action
             android:id="@+id/action_startFragment_to_settingsFragment"
             app:destination="@id/settingsFragment" />
+        <action
+            android:id="@+id/action_startFragment_to_invalidSettingsDialog"
+            app:destination="@id/invalidSettingsDialog" />
     </fragment>
 
     <fragment
@@ -49,4 +52,15 @@
             app:popUpTo="@id/gameFragment"
             app:popUpToInclusive="true" />
     </fragment>
+    <dialog
+        android:id="@+id/invalidSettingsDialog"
+        android:name="com.example.mysnek.InvalidSettingsDialog"
+        android:label="InvalidSettingsDialog" >
+        <action
+            android:id="@+id/action_invalidSettingsDialog_to_settingsFragment2"
+            app:destination="@id/settingsFragment" />
+        <action
+            android:id="@+id/action_invalidSettingsDialog_to_gameFragment"
+            app:destination="@id/gameFragment" />
+    </dialog>
 </navigation>

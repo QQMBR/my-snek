@@ -22,13 +22,12 @@ class MainActivity : AppCompatActivity() {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
 
         if (sharedPreferences.getBoolean("switch_theme", false)) {
-            setTheme(R.style.AppTheme)
+            setTheme(R.style.DarkTheme)
         }
 
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
-        supportActionBar?.hide()
     }
 
     override fun onDestroy() {

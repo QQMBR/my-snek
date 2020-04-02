@@ -17,40 +17,70 @@
         app:justifyContent="space_evenly"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.492"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.84">
+        app:layout_constraintVertical_bias="0.92">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAlignment="center"
-            android:text="@string/start_game" />
+            android:text="@string/start_game"
+            app:icon="@drawable/ic_play_arrow_black_24dp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/button2"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            app:icon="@drawable/ic_settings_black_24dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAlignment="center"
             android:text="@string/settings" />
     </com.google.android.flexbox.FlexboxLayout>
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="263dp"
-        android:layout_height="321dp"
-        android:lineSpacingExtra="6sp"
-        android:text="@string/intro_text"
-        android:textSize="14sp"
-        android:textStyle="italic"
-        android:textAlignment="center"
-        android:scrollbars="vertical"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="266dp"
+        android:layout_height="421dp"
+        android:layout_marginBottom="32dp"
         app:layout_constraintBottom_toTopOf="@+id/flexboxLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.81" />
+        app:layout_constraintVertical_bias="0.68">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/textView"
+            style="@style/Widget.MaterialComponents.TextView"
+            android:layout_width="match_parent"
+            android:layout_height="260dp"
+            android:layout_marginTop="8dp"
+            android:lineSpacingExtra="8dp"
+            android:scrollbars="vertical"
+            android:text="@string/intro_text"
+            android:textAlignment="textStart"
+            android:textAppearance="?attr/textAppearanceBody1"
+            android:textStyle="italic"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/materialTextView"
+            app:layout_constraintVertical_bias="0.0" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/materialTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textAllCaps="true"
+            android:textAppearance="?attr/textAppearanceHeadline2"
+            android:textColor="?attr/colorSecondary"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0"
+            app:textAllCaps="true" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

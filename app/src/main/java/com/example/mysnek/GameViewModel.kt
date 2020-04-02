@@ -15,7 +15,7 @@ class GameViewModel(private val settings: SnekSettings) : ViewModel(),
     val liveEventData = MutableLiveData<Event<SingleSnekEvent>>()
 
     private var isPaused = false
-    private var gameOver = true
+    private var needToStart = true
 
     val events = PublishSubject.create<GameModel.GameControl>()
 
@@ -25,7 +25,7 @@ class GameViewModel(private val settings: SnekSettings) : ViewModel(),
         if (it == GameModel.Flow.PAUSE) {
             isPaused = true
             Log.d(TAG, "Sending Pause")
-            liveEventData.postValue(Event(Pause2))
+            liveEventData.postValue(Event(Pause))
         }
     }
 
@@ -41,9 +41,9 @@ class GameViewModel(private val settings: SnekSettings) : ViewModel(),
     }
 
     fun startGame() {
-        if (gameOver) {
+        if (needToStart) {
             events.onNext(GameModel.Flow.START_GAME)
-            gameOver = false
+            needToStart = false
         }
     }
 
@@ -55,15 +55,14 @@ class GameViewModel(private val settings: SnekSettings) : ViewModel(),
 
     override fun onComplete() {
         Log.d(TAG, "Man's done up in this")
-        //liveGameData.postValue(Over(arrayListOf()))
 
-        endGame(0)
+        endGame(-1)
     }
 
     override fun onError(e: Throwable) {
         Log.d(TAG, "Fam can't cop it no more")
 
-        endGame(0)
+        endGame(-2)
     }
 
     override fun onNext(game: SnekData) {
@@ -77,23 +76,18 @@ class GameViewModel(private val settings: SnekSettings) : ViewModel(),
         }
 
         if (isPaused) {
-            liveEventData.postValue(Event(Resume2))
+            liveEventData.postValue(Event(Resume))
             isPaused = false
         }
     }
 
     private fun endGame(score: Int) {
-        gameOver = true
+        needToStart = true
         Log.d(TAG, "Posting GameOver")
-        liveEventData.postValue(Event(GameOver2(score)))
+        liveEventData.postValue(Event(GameOver(score)))
     }
     override fun onSubscribe(d: Disposable) {
         Log.d(TAG, "Get ready for some cringe")
-    }
-
-
-    init {
-        Log.d(TAG, "Initialized VM")
     }
 
     override fun onCleared() {

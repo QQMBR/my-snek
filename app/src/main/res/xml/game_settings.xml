@@ -24,10 +24,19 @@
         app:key="snake_start_slowness"
         app:title="Initial speed"
         app:defaultValue="4" />
+    <SeekBarPreference
+        app:key="starting_accel"
+        app:title="Initial acceleration"
+        app:adjustable="true"
+        app:min="0"
+        app:seekBarIncrement="1"
+        app:defaultValue="0" />
+
     <EditTextPreference
         app:key="snake_min_slowness"
         app:title="Maximum speed"
         app:defaultValue="20" />
+
     <EditTextPreference
         app:key="counts_to_max"
         app:title="Counts to max. speed"
@@ -39,5 +48,5 @@
     <SwitchPreferenceCompat
         app:key="switch_theme"
         app:defaultValue="false"
-        app:title="Use alternative theme" />
+        app:title="Enable dark theme" />
 </PreferenceScreen>

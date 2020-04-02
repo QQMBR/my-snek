@@ -1,8 +1,9 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light" >
+    <style name="LightTheme" parent="Theme.MaterialComponents.Light.NoActionBar" >
         <!-- Customize your theme here. -->
+        <!--
         <item name="colorSecondary">@color/colorBody</item>
         <item name="colorAccent">@color/colorHead</item>
 
@@ -18,53 +19,60 @@
         <item name="android:colorPrimaryDark">@color/colorGridBackground</item>
 
         <item name="android:colorAccent">@color/colorHead</item>
+        -->
+        <item name="colorPrimary">@color/colorHead</item>
+        <item name="colorPrimaryVariant">@color/colorBody</item>
+        <item name="colorPrimaryDark">@color/colorHeadDark</item>
 
-        <item name="android:buttonStyle">@style/AppTheme.Button</item>
-        <item name="highlightTextStyle">@style/AppTheme.HighlightText</item>
-        <item name="fontFamily">@font/quicksand</item>
+        <item name="colorSecondary">@color/colorApple</item>
+        <item name="colorOnSecondary">#000000</item>
+
+        <item name="colorSurface">#eeeeee</item>
+
+        <item name="fontFamily">@font/overpass_mono</item>
+        <item name="android:fontFamily">@font/overpass_mono</item>
+
+        <item name="shapeAppearanceSmallComponent">@style/SnekShapeAppearance.SmallComponent</item>
+        <item name="shapeAppearanceMediumComponent">@style/SnekShapeAppearance.MediumComponent</item>
+
+        <item name="textAllCaps">false</item>
+        <item name="android:textAllCaps">false</item>
     </style>
 
-    <style name="AppTheme.Button" parent="Widget.AppCompat.Button" >
-        <item name="android:background">@drawable/round_button</item>
-        <item name="android:backgroundTint">@color/colorGridBackground</item>
+    <style name="LightHeadline1" parent="TextAppearance.MaterialComponents.Headline1">
+        <item name="color">@color/colorApple</item>
     </style>
-
-    <style name="TextAppearance.AppCompat.Big" parent="TextAppearance.AppCompat">
-        <item name="android:textSize">100sp</item>
-    </style>
-
-    <style name="AppTheme.HighlightText" parent="TextAppearance.AppCompat.Big">
-        <item name="android:textColor">@color/colorApple</item>
-    </style>
-
-    <style name="StrongTheme" parent="Theme.AppCompat" >
+    
+    <style name="DarkTheme" parent="Theme.MaterialComponents.NoActionBar" >
         <!-- Customize your theme here. -->
-        <item name="colorSecondary">@color/strongBody</item>
-        <item name="colorAccent">@color/strongHead</item>
+        <item name="colorPrimary">@color/strongHead</item>
+        <item name="colorPrimaryVariant">@color/strongBody</item>
+        <item name="colorPrimaryDark">@color/strongPrimaryDark</item>
 
+        <item name="colorSecondary">@color/strongApple</item>
+        <item name="colorOnSecondary">#000000</item>
+
+        <item name="colorSurface">#424242</item>
+
+        <item name="fontFamily">@font/overpass_mono</item>
+        <item name="android:fontFamily">@font/overpass_mono</item>
+
+        <item name="textAppearanceHeadline1">@style/DarkHeadline1</item>
+        <item name="shapeAppearanceSmallComponent">@style/SnekShapeAppearance.SmallComponent</item>
+        <item name="shapeAppearanceMediumComponent">@style/SnekShapeAppearance.MediumComponent</item>
+    </style>
+
+    <style name="DarkHeadline1" parent="TextAppearance.MaterialComponents.Headline1">
         <item name="color">@color/strongApple</item>
-
-        <item name="colorPrimary">@color/strongBackground</item>
-        <item name="colorPrimaryDark">@color/strongGridBackground</item>
-
-        <item name="android:colorPrimary">@color/strongBackground</item>
-        <item name="android:colorBackground">@color/strongBackground</item>
-        <item name="android:textColor">@color/strongHead</item>
-        <item name="android:colorPrimaryDark">@color/strongGridBackground</item>
-
-        <item name="android:colorAccent">@color/strongHead</item>
-
-        <item name="android:buttonStyle">@style/StrongTheme.Button</item>
-        <item name="highlightTextStyle">@style/StrongTheme.HighlightText</item>
-        <item name="fontFamily">@font/quicksand</item>
     </style>
 
-    <style name="StrongTheme.Button" parent="Widget.AppCompat.Button">
-        <item name="android:background">@drawable/round_button</item>
-        <item name="backgroundTint">@color/strongGridBackground</item>
+    <style name="SnekShapeAppearance.SmallComponent" parent="ShapeAppearance.MaterialComponents.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">28dp</item>
     </style>
 
-    <style name="StrongTheme.HighlightText" parent="TextAppearance.AppCompat.Big">
-        <item name="android:textColor">@color/strongApple</item>
+    <style name="SnekShapeAppearance.MediumComponent" parent="ShapeAppearance.MaterialComponents.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">36dp</item>
     </style>
 </resources>
